@@ -37,3 +37,29 @@ async def fetch_match_info(match_id):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.json()
+
+def get_participant_info_by_match(match_info, summoner_riot_id):
+    game_name, tag = summoner_riot_id.split(" #")
+
+    # get data for participant
+    for participant in match_info["info"]["participants"]:
+        if participant["riotIdGameName"] == game_name and participant["riotIdTagline"] == tag:
+            return participant
+    
+    return {}
+
+async def get_death_count_by_summoner(summoner_riot_id):
+    match_history = await fetch_summoner_match_history_this_week(summoner_riot_id)
+    matches_info = []
+    deaths = 0
+
+    for match in match_history:
+        match_info = await fetch_match_info(match)
+        matches_info.append(match_info)
+    
+    for match in matches_info:
+        participant_data = get_participant_info_by_match(match, summoner_riot_id)
+        deaths += participant_data["deaths"]
+
+    return deaths
+

@@ -2,7 +2,6 @@ import discord
 from discord.ext import commands, tasks
 import mongo_db
 import lol_api
-import lol
 import os
 from dotenv import load_dotenv
 
@@ -25,7 +24,6 @@ async def ping(ctx):
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
-    fetch_summoner_data.start()
 
 
 @bot.command(
@@ -36,12 +34,10 @@ async def add_summoner(ctx, summoner_riot_id: str):
     await ctx.send(f"Summoner {summoner_riot_id} added.")
 
 
-@tasks.loop(hours=24)
-async def fetch_summoner_data():
-    summoners = await mongo_db.get_summoners()
-    for summoner in summoners:
-        data = await lol_api.fetch_summoner_puuid_by_riot_id(summoner["name"])
-        print(data)
+@bot.command(name="deaths")
+async def deaths(ctx, summoner_riot_id: str):
+    deaths = await lol_api.get_death_count_by_summoner(summoner_riot_id)
+    await ctx.send(f"Summoner {summoner_riot_id} has died {deaths} times this week.")
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
