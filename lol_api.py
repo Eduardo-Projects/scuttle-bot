@@ -30,3 +30,10 @@ async def fetch_summoner_match_history_this_week(summoner_riot_id):
     async with aiohttp.ClientSession() as session:
         async with session.get(url) as response:
             return await response.json()
+
+async def fetch_match_info(match_id):
+    url = f"https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={os.getenv("RIOT_API_KEY")}"
+
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            return await response.json()

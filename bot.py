@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands, tasks
 import mongo_db
 import lol_api
+import lol
 import os
 from dotenv import load_dotenv
 
@@ -33,15 +34,6 @@ async def on_ready():
 async def add_summoner(ctx, summoner_riot_id: str):
     await mongo_db.add_summoner(summoner_riot_id)
     await ctx.send(f"Summoner {summoner_riot_id} added.")
-
-
-@bot.command(
-    name="get_summoner_match_history",
-    help="Gets a list of Matches from the last 7 days for a specific summoner",
-)
-async def get_summoner_match_history(ctx, summoner_riot_id: str):
-    data = await lol_api.fetch_summoner_match_history_this_week(summoner_riot_id)
-    await ctx.send(f"Match IDs from the last 7 days for {summoner_riot_id}: {data}")
 
 
 @tasks.loop(hours=24)
