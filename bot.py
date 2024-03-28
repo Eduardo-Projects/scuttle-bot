@@ -30,17 +30,26 @@ async def on_ready():
 @bot.command(
     name="add_summoner", help="Adds a League of Legends summoner name to track."
 )
-async def add_summoner(ctx, summoner_name: str):
-    await mongo_db.add_summoner(summoner_name)
-    await ctx.send(f"Summoner {summoner_name} added.")
+async def add_summoner(ctx, summoner_riot_id: str):
+    await mongo_db.add_summoner(summoner_riot_id)
+    await ctx.send(f"Summoner {summoner_riot_id} added.")
+
+
+@bot.command(
+    name="get_summoner_match_history",
+    help="Gets a list of Matches from the last 7 days for a specific summoner",
+)
+async def get_summoner_match_history(ctx, summoner_riot_id: str):
+    data = await lol_api.fetch_summoner_match_history_this_week(summoner_riot_id)
+    await ctx.send(f"Match IDs from the last 7 days for {summoner_riot_id}: {data}")
 
 
 @tasks.loop(hours=24)
 async def fetch_summoner_data():
     summoners = await mongo_db.get_summoners()
-    print(summoners)
     for summoner in summoners:
-        data = await lol_api.fetch_summoner_data(summoner["name"])
+        data = await lol_api.fetch_summoner_puuid_by_riot_id(summoner["name"])
+        print(data)
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))

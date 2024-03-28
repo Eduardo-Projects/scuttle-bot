@@ -9,9 +9,9 @@ client = MongoClient(os.getenv("MONGO_DB_URI"))
 db = client["league_discord_bot"]
 
 
-async def add_summoner(name):
+async def add_summoner(summoner_riot_id):
     summoner_collection = db.summoners
-    summoner_document = {"name": name, "last_checked": 0}
+    summoner_document = {"name": summoner_riot_id, "last_checked": 0}
     summoner_collection.insert_one(summoner_document)
 
 
