@@ -4,6 +4,7 @@ import mongo_db
 import lol_api
 import os
 from dotenv import load_dotenv
+import json
 
 # Load environment variables from .env file
 load_dotenv()
@@ -34,10 +35,20 @@ async def add_summoner(ctx, summoner_riot_id: str):
     await ctx.send(f"Summoner {summoner_riot_id} added.")
 
 
-@bot.command(name="deaths")
-async def deaths(ctx, summoner_riot_id: str):
-    deaths = await lol_api.get_death_count_by_summoner(summoner_riot_id)
-    await ctx.send(f"Summoner {summoner_riot_id} has died {deaths} times this week.")
+@bot.command(name="stats")
+async def stats(ctx, summoner_riot_id: str):
+    await ctx.send(f"Loading ranked solo queue stats for {summoner_riot_id}...")
+
+    matches_data = await lol_api.fetch_match_data_by_range(7, summoner_riot_id)
+    stats = await lol_api.get_stats_by_summoner(matches_data, summoner_riot_id)
+
+    formatted_stats_output = "\n".join(
+        [f"{key} {value}" for key, value in stats.items()]
+    )
+
+    await ctx.send(
+        f"Summoner {summoner_riot_id}'s stats for the past 7 days. \n{formatted_stats_output}"
+    )
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
