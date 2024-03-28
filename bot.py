@@ -9,11 +9,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Define intents
-intents = discord.Intents.default()  # This enables only the default intents
+intents = discord.Intents.all()
 intents.messages = True  # If your bot needs to receive messages
 intents.guilds = True  # If your bot needs to work with guild (server) information
 
 bot = commands.Bot(command_prefix="!", intents=intents)
+
+
+@bot.command(name="ping")
+async def ping(ctx):
+    await ctx.send("Pong!")
 
 
 @bot.event
@@ -26,7 +31,7 @@ async def on_ready():
     name="add_summoner", help="Adds a League of Legends summoner name to track."
 )
 async def add_summoner(ctx, summoner_name: str):
-    mongo_db.add_summoner(summoner_name)
+    await mongo_db.add_summoner(summoner_name)
     await ctx.send(f"Summoner {summoner_name} added.")
 
 
@@ -36,7 +41,6 @@ async def fetch_summoner_data():
     print(summoners)
     for summoner in summoners:
         data = await lol_api.fetch_summoner_data(summoner["name"])
-        print(data)
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
