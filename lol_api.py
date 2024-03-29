@@ -90,3 +90,31 @@ async def fetch_summoner_stats(summoner_puuid):
 async def fetch_summoner_stats_last_game(summoner_puuid):
     matches_data = await fetch_matches_data_by_number(summoner_puuid)
     return calculate_stats(summoner_puuid, matches_data)
+
+async def fetch_summoner_stats_batch(summoners):
+    agg_stats = []
+
+    # retreive a list of weekly stats based seperated by summoner
+    for summoner in summoners:
+        summoner_puuid = summoner["puuid"]
+        weekly_stats = await fetch_summoner_stats(summoner_puuid)
+        weekly_stats_with_name = weekly_stats.copy()
+        weekly_stats_with_name["Name"] = summoner["name"]
+        agg_stats.append(weekly_stats_with_name)
+
+    # Extract keys excluding 'Name'
+    keys = [key for key in agg_stats[0] if key != 'Name']
+
+    # Initialize a dictionary to store max values and corresponding names
+    max_values = {key: {'value': float('-inf'), 'Name': None} for key in keys}
+
+    # Update max_values with the max value for each key and corresponding name
+    for item in agg_stats:
+        for key in keys:
+            if item[key] > max_values[key]['value']:
+                max_values[key] = {'value': item[key], 'Name': item['Name']}
+
+    # Convert the result into a list of dictionaries as specified
+    result = [{'Key': key, 'Max Value': max_values[key]['value'], 'Name': max_values[key]['Name']} for key in max_values]
+    
+    return result
