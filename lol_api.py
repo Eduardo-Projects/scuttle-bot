@@ -39,18 +39,16 @@ async def fetch_matches_data(summoner_puuid, range=7, queue_id=420):
     
     return matches_data
 
-async def get_summoner_stats(summoner_puuid):
+async def fetch_summoner_stats(summoner_puuid):
     matches_data = await fetch_matches_data(summoner_puuid)
-    total_matches = len(matches_data)
     data_keys = ['Total Matches', 'Assists', 'Ability Uses', 'Average Damage Per Minute', 'Average Gold Per Minute',  
                  'Average KDA', 'Average Kill Participation', 'Skillshots Hit', 'Solo Kills',  
                  'Average Team Damage Percentage', 'Average Damage To Champions',  'Enemy Missing Pings']
     
     # Initialize the dictionary with keys set to 0
     data = {key: 0 for key in data_keys}
-    total_damage_per_minute=total_gold_per_minute=total_kda=total_kp=total_team_damage_percentage=total_damage_to_champions=0
 
-    data["Total Matches"] = total_matches
+    data["Total Matches"] = len(matches_data)
 
     for match in matches_data:
         participants = match["info"]["participants"]
@@ -61,21 +59,15 @@ async def get_summoner_stats(summoner_puuid):
         data["Skillshots Hit"] += stats["challenges"]["skillshotsHit"]
         data["Solo Kills"] += stats["challenges"]["soloKills"]
         data["Enemy Missing Pings"] += stats["enemyMissingPings"]
-
-        total_damage_per_minute += stats["challenges"]["damagePerMinute"]
-        total_gold_per_minute += stats["challenges"]["goldPerMinute"]
-        total_kda += stats["challenges"]["kda"]
-        total_kp += stats["challenges"]["killParticipation"]
-        total_team_damage_percentage += stats["challenges"]["teamDamagePercentage"]
-        total_damage_to_champions += stats["totalDamageDealtToChampions"]
-
-    data["Average Damage Per Minute"] = total_damage_per_minute/total_matches
-    data["Average Gold Per Minute"] = total_gold_per_minute/total_matches
-    data["Average KDA"] = total_kda/total_matches
-    data["Average Kill Participation"] = total_kp/total_matches
-    data["Average Team Damage Percentage"] = total_team_damage_percentage/total_matches
-    data["Average Damage To Champions"] = total_damage_to_champions/total_matches
-
+        data["Average Damage Per Minute"] += stats["challenges"]["damagePerMinute"]
+        data["Average Gold Per Minute"] += stats["challenges"]["goldPerMinute"]
+        data["Average KDA"]  += stats["challenges"]["kda"]
+        data["Average Kill Participation"] += stats["challenges"]["killParticipation"]
+        data["Average Team Damage Percentage"] += stats["challenges"]["teamDamagePercentage"]
+        data["Average Damage To Champions"] += stats["totalDamageDealtToChampions"]
+    
+    # calculate averages
+    data = {key: (value / len(matches_data) if "Average" in key else value) for key, value in data.items()}
     # Round values to 2 decimal places
     rounded_data = {key: round(value, 2) for key, value in data.items()}
 

@@ -42,7 +42,7 @@ async def stats(ctx, summoner_riot_id: str):
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
 
     if puuid:
-        stats = await lol_api.get_summoner_stats(puuid)
+        stats = await lol_api.fetch_summoner_stats(puuid)
         formatted_stats_data = "\n".join(
             [f"{key} {value}" for key, value in stats.items()]
         )
