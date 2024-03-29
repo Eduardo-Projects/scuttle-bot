@@ -39,11 +39,9 @@ async def add_summoner(ctx, summoner_riot_id: str):
 async def stats(ctx, summoner_riot_id: str):
     await ctx.send(f"*Loading ranked solo queue stats for {summoner_riot_id} ...*")
 
-    matches_data = await lol_api.fetch_match_data_by_range(7, summoner_riot_id)
-    stats = await lol_api.get_stats_by_summoner(matches_data, summoner_riot_id)
-
+    puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
+    stats = await lol_api.get_summoner_stats(puuid)
     formatted_stats_data = "\n".join([f"{key} {value}" for key, value in stats.items()])
-
     formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
 
     await ctx.send(

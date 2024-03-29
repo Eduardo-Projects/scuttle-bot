@@ -6,61 +6,42 @@ import datetime
 # Load environment variables from .env file
 load_dotenv()
 
+async def handle_api_call(url):
+    async with aiohttp.ClientSession() as session:
+        async with session.get(url) as response:
+            try:
+                response.raise_for_status()  # Raise an exception for non-200 status codes
+                data = await response.json()
+                return data
+            except aiohttp.ClientResponseError as e:
+                print(f"Error in API call: {e.status}")
+                return None
+
 async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
     game_name, tag = summoner_riot_id.split(" #")
-    
     url = f"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{game_name}/{tag}?api_key={os.getenv("RIOT_API_KEY")}"
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            data = await response.json()
-            return data['puuid']
+    data = await handle_api_call(url)
+    return data['puuid']
 
 # retrive match data for summoner based on date range
-async def fetch_match_data_by_range(day_range, summoner_riot_id):
-    match_ids = []
-    matches_data = []
-    ranked_solo_queue_id = 420
-
-    # format dates
+async def fetch_matches_data(summoner_puuid, range=7, queue_id=420):
     today = datetime.datetime.today()
-    start = today - datetime.timedelta(days=day_range)
-
+    start = today - datetime.timedelta(days=range)
     today_formatted = int(today.timestamp())
     start_formatted = int(start.timestamp())
+    matches_data = []
 
-    # convert summoner riot id to puuid
-    summoner_puuid = await fetch_summoner_puuid_by_riot_id(summoner_riot_id)
+    url = f"https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/{summoner_puuid}/ids?startTime={start_formatted}&endTime={today_formatted}&queue={queue_id}&start=0&count=100&api_key={os.getenv("RIOT_API_KEY")}"
+    match_ids =  await handle_api_call(url)
 
-    # retrieve match id history
-    url = f"https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/{summoner_puuid}/ids?startTime={start_formatted}&endTime={today_formatted}&queue={ranked_solo_queue_id}&start=0&count=100&api_key={os.getenv("RIOT_API_KEY")}"
-
-    async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            match_id_history_data = await response.json()
-            match_ids = match_id_history_data
-    
-    # convert match ids into match data
-    for match_id in match_ids:
-        url = f"https://americas.api.riotgames.com/lol/match/v5/matches/{match_id}?api_key={os.getenv("RIOT_API_KEY")}"
-
-        async with aiohttp.ClientSession() as session:
-            async with session.get(url) as response:
-                 match_data = await response.json()
-                 matches_data.append(match_data)
+    for id in match_ids:
+        url = f"https://americas.api.riotgames.com/lol/match/v5/matches/{id}?api_key={os.getenv("RIOT_API_KEY")}"
+        matches_data.append(await handle_api_call(url))
     
     return matches_data
 
-def get_participant_info_by_match(match_info, summoner_riot_id):
-    game_name, tag = summoner_riot_id.split(" #")
-
-    # get data for participant
-    for participant in match_info["info"]["participants"]:
-        if participant["riotIdGameName"] == game_name and participant["riotIdTagline"] == tag:
-            return participant
-    
-    return {}
-
-async def get_stats_by_summoner(matches_data, summoner_riot_id):
+async def get_summoner_stats(summoner_puuid):
+    matches_data = await fetch_matches_data(summoner_puuid)
     total_matches = len(matches_data)
     data_keys = ['Total Matches', 'Assists', 'Ability Uses', 'Average Damage Per Minute', 'Average Gold Per Minute',  
                  'Average KDA', 'Average Kill Participation', 'Skillshots Hit', 'Solo Kills',  
@@ -68,52 +49,26 @@ async def get_stats_by_summoner(matches_data, summoner_riot_id):
     
     # Initialize the dictionary with keys set to 0
     data = {key: 0 for key in data_keys}
-
-    # iterate over each match and analyze stats
-    total_damage_per_minute = 0
-    total_gold_per_minute = 0
-    total_kda = 0
-    total_kp = 0
-    total_team_damage_percentage = 0
-    total_damage_to_champions = 0
+    total_damage_per_minute=total_gold_per_minute=total_kda=total_kp=total_team_damage_percentage=total_damage_to_champions=0
 
     data["Total Matches"] = total_matches
 
     for match in matches_data:
-        participant_data = get_participant_info_by_match(match, summoner_riot_id)
-
-        # assists
-        data["Assists"] += participant_data["assists"]
-
-        # ability uses
-        data["Ability Uses"] += participant_data["challenges"]["abilityUses"]
-
-        # damage per minute
-        total_damage_per_minute += participant_data["challenges"]["damagePerMinute"]
-
-        # gold per minute
-        total_gold_per_minute += participant_data["challenges"]["goldPerMinute"]
-
-        # kda
-        total_kda += participant_data["challenges"]["kda"]
-
-        # kill participation
-        total_kp += participant_data["challenges"]["killParticipation"]
-
-        # skilshots
-        data["Skillshots Hit"] += participant_data["challenges"]["skillshotsHit"]
-
-        # solo kills
-        data["Solo Kills"] += participant_data["challenges"]["soloKills"]
+        participants = match["info"]["participants"]
+        stats = next((obj for obj in participants if obj.get('puuid') == summoner_puuid), None)
         
-        # team damage percentage
-        total_team_damage_percentage += participant_data["challenges"]["teamDamagePercentage"]
+        data["Assists"] += stats["assists"]
+        data["Ability Uses"] += stats["challenges"]["abilityUses"]
+        data["Skillshots Hit"] += stats["challenges"]["skillshotsHit"]
+        data["Solo Kills"] += stats["challenges"]["soloKills"]
+        data["Enemy Missing Pings"] += stats["enemyMissingPings"]
 
-        # damage to champtions
-        total_damage_to_champions += participant_data["totalDamageDealtToChampions"]
-
-        # enemy missing pings
-        data["Enemy Missing Pings"] += participant_data["enemyMissingPings"]
+        total_damage_per_minute += stats["challenges"]["damagePerMinute"]
+        total_gold_per_minute += stats["challenges"]["goldPerMinute"]
+        total_kda += stats["challenges"]["kda"]
+        total_kp += stats["challenges"]["killParticipation"]
+        total_team_damage_percentage += stats["challenges"]["teamDamagePercentage"]
+        total_damage_to_champions += stats["totalDamageDealtToChampions"]
 
     data["Average Damage Per Minute"] = total_damage_per_minute/total_matches
     data["Average Gold Per Minute"] = total_gold_per_minute/total_matches
