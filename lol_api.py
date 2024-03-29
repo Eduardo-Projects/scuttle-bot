@@ -23,7 +23,7 @@ async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
     data = await handle_api_call(url)
     return data["puuid"] if data is not None else None
 
-async def fetch_matches_data(summoner_puuid, range=7, queue_id=420):
+async def fetch_matches_data_by_days(summoner_puuid, range=7, queue_id=420):
     today = datetime.datetime.today()
     start = today - datetime.timedelta(days=range)
     today_formatted = int(today.timestamp())
@@ -39,12 +39,22 @@ async def fetch_matches_data(summoner_puuid, range=7, queue_id=420):
     
     return matches_data
 
-async def fetch_summoner_stats(summoner_puuid):
-    matches_data = await fetch_matches_data(summoner_puuid)
+async def fetch_matches_data_by_number(summoner_puuid, number=1, queue_id=420):
+    matches_data = []
+
+    url = f"https://americas.api.riotgames.com/lol/match/v5/matches/by-puuid/{summoner_puuid}/ids?queue={queue_id}&start=0&count={number}&api_key={os.getenv("RIOT_API_KEY")}"
+    match_ids =  await handle_api_call(url)
+
+    for id in match_ids:
+        url = f"https://americas.api.riotgames.com/lol/match/v5/matches/{id}?api_key={os.getenv("RIOT_API_KEY")}"
+        matches_data.append(await handle_api_call(url))
+    
+    return matches_data
+
+def calculate_stats(summoner_puuid, matches_data):
     data_keys = ['Total Matches', 'Assists', 'Ability Uses', 'Average Damage Per Minute', 'Average Gold Per Minute',  
                  'Average KDA', 'Average Kill Participation', 'Skillshots Hit', 'Solo Kills',  
                  'Average Team Damage Percentage', 'Average Damage To Champions',  'Enemy Missing Pings']
-    
     # Initialize the dictionary with keys set to 0
     data = {key: 0 for key in data_keys}
 
@@ -72,3 +82,11 @@ async def fetch_summoner_stats(summoner_puuid):
     rounded_data = {key: round(value, 2) for key, value in data.items()}
 
     return rounded_data
+
+async def fetch_summoner_stats(summoner_puuid):
+    matches_data = await fetch_matches_data_by_days(summoner_puuid)
+    return calculate_stats(summoner_puuid, matches_data)
+
+async def fetch_summoner_stats_last_game(summoner_puuid):
+    matches_data = await fetch_matches_data_by_number(summoner_puuid)
+    return calculate_stats(summoner_puuid, matches_data)

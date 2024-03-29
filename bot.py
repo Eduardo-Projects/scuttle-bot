@@ -55,4 +55,26 @@ async def stats(ctx, summoner_riot_id: str):
         await ctx.send(f"Error getting data for summoner **{summoner_riot_id}**.")
 
 
+@bot.command(name="last_game")
+async def stats(ctx, summoner_riot_id: str):
+    await ctx.send(
+        f"*Loading last game ranked solo queue stats for **{summoner_riot_id}** ...*"
+    )
+
+    puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
+
+    if puuid:
+        stats = await lol_api.fetch_summoner_stats_last_game(puuid)
+        formatted_stats_data = "\n".join(
+            [f"{key} {value}" for key, value in stats.items()]
+        )
+        formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
+
+        await ctx.send(
+            f"**Summoner {summoner_riot_id}'s stats for the last game.** {formatted_stats_output}"
+        )
+    else:
+        await ctx.send(f"Error getting data for summoner **{summoner_riot_id}**.")
+
+
 bot.run(os.getenv("DISCORD_TOKEN"))
