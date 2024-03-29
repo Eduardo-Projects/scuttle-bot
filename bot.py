@@ -4,7 +4,7 @@ import mongo_db
 import lol_api
 import os
 from dotenv import load_dotenv
-import datetime
+from datetime import datetime
 
 # Load environment variables from .env file
 load_dotenv()

@@ -2,11 +2,14 @@ import os
 from pymongo import MongoClient
 from dotenv import load_dotenv
 import lol_api
+import certifi
 
 # Load environment variables from .env file
 load_dotenv()
+ca = certifi.where()
 
-client = MongoClient(os.getenv("MONGO_DB_URI"))
+
+client = MongoClient(os.getenv("MONGO_DB_URI"), tlsCAFile=ca)
 db = client["league_discord_bot"]
 
 
