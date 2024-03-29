@@ -62,7 +62,7 @@ def get_participant_info_by_match(match_info, summoner_riot_id):
 
 async def get_stats_by_summoner(matches_data, summoner_riot_id):
     total_matches = len(matches_data)
-    data_keys = ['Assists', 'Ability Uses', 'Average Damage Per Minute', 'Average Gold Per Minute',  
+    data_keys = ['Total Matches', 'Assists', 'Ability Uses', 'Average Damage Per Minute', 'Average Gold Per Minute',  
                  'Average KDA', 'Average Kill Participation', 'Skillshots Hit', 'Solo Kills',  
                  'Average Team Damage Percentage', 'Average Damage To Champions',  'Enemy Missing Pings']
     
@@ -76,6 +76,8 @@ async def get_stats_by_summoner(matches_data, summoner_riot_id):
     total_kp = 0
     total_team_damage_percentage = 0
     total_damage_to_champions = 0
+
+    data["Total Matches"] = total_matches
 
     for match in matches_data:
         participant_data = get_participant_info_by_match(match, summoner_riot_id)
