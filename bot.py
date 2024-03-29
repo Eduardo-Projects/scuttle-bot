@@ -37,17 +37,17 @@ async def add_summoner(ctx, summoner_riot_id: str):
 
 @bot.command(name="stats")
 async def stats(ctx, summoner_riot_id: str):
-    await ctx.send(f"Loading ranked solo queue stats for {summoner_riot_id}...")
+    await ctx.send(f"*Loading ranked solo queue stats for {summoner_riot_id} ...*")
 
     matches_data = await lol_api.fetch_match_data_by_range(7, summoner_riot_id)
     stats = await lol_api.get_stats_by_summoner(matches_data, summoner_riot_id)
 
-    formatted_stats_output = "\n".join(
-        [f"{key} {value}" for key, value in stats.items()]
-    )
+    formatted_stats_data = "\n".join([f"{key} {value}" for key, value in stats.items()])
+
+    formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
 
     await ctx.send(
-        f"Summoner {summoner_riot_id}'s stats for the past 7 days. \n{formatted_stats_output}"
+        f"**Summoner {summoner_riot_id}'s stats for the past 7 days.** {formatted_stats_output}"
     )
 
 
