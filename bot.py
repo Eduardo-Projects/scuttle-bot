@@ -37,16 +37,22 @@ async def add_summoner(ctx, summoner_riot_id: str):
 
 @bot.command(name="stats")
 async def stats(ctx, summoner_riot_id: str):
-    await ctx.send(f"*Loading ranked solo queue stats for {summoner_riot_id} ...*")
+    await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
 
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
-    stats = await lol_api.get_summoner_stats(puuid)
-    formatted_stats_data = "\n".join([f"{key} {value}" for key, value in stats.items()])
-    formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
 
-    await ctx.send(
-        f"**Summoner {summoner_riot_id}'s stats for the past 7 days.** {formatted_stats_output}"
-    )
+    if puuid:
+        stats = await lol_api.get_summoner_stats(puuid)
+        formatted_stats_data = "\n".join(
+            [f"{key} {value}" for key, value in stats.items()]
+        )
+        formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
+
+        await ctx.send(
+            f"**Summoner {summoner_riot_id}'s stats for the past 7 days.** {formatted_stats_output}"
+        )
+    else:
+        await ctx.send(f"Error getting data for summoner **{summoner_riot_id}**.")
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))

@@ -21,9 +21,8 @@ async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
     game_name, tag = summoner_riot_id.split(" #")
     url = f"https://americas.api.riotgames.com/riot/account/v1/accounts/by-riot-id/{game_name}/{tag}?api_key={os.getenv("RIOT_API_KEY")}"
     data = await handle_api_call(url)
-    return data['puuid']
+    return data["puuid"] if data is not None else None
 
-# retrive match data for summoner based on date range
 async def fetch_matches_data(summoner_puuid, range=7, queue_id=420):
     today = datetime.datetime.today()
     start = today - datetime.timedelta(days=range)
