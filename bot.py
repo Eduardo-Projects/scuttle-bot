@@ -28,6 +28,13 @@ async def on_ready():
     weekly_report.start()
 
 
+@bot.event
+async def on_guild_join(guild):
+    print(f"Joined new guild: {guild.name}")
+    print(f"Guild ID: {guild.id}")
+    await mongo_db.add_guild(guild.name, guild.id)
+
+
 @bot.command(
     name="add_summoner", help="Adds a League of Legends summoner name to track."
 )

@@ -36,7 +36,7 @@ async def fetch_matches_data_by_days(summoner_puuid, range=7, queue_id=420):
     for id in match_ids:
         url = f"https://americas.api.riotgames.com/lol/match/v5/matches/{id}?api_key={os.getenv("RIOT_API_KEY")}"
         matches_data.append(await handle_api_call(url))
-    
+
     return matches_data
 
 async def fetch_matches_data_by_number(summoner_puuid, number=1, queue_id=420):
@@ -97,6 +97,7 @@ async def fetch_summoner_stats_batch(summoners):
     # retreive a list of weekly stats based seperated by summoner
     for summoner in summoners:
         summoner_puuid = summoner["puuid"]
+        print(f"Fetching stats for summoner {summoner["name"]}")
         weekly_stats = await fetch_summoner_stats(summoner_puuid)
         weekly_stats_with_name = weekly_stats.copy()
         weekly_stats_with_name["Name"] = summoner["name"]
