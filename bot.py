@@ -239,7 +239,7 @@ async def fetch_all_summoner_match_data():
                 name = summoner["name"]
 
                 await mongo_db.handle_summoner_in_match_data_collection(summoner_puuid=puuid, summoner_name=name)
-                todays_match_data = await lol_api.fetch_matches_data_by_day_range(summoner_puuid=puuid, range=7)
+                todays_match_data = await lol_api.fetch_matches_data_by_day_range(summoner_puuid=puuid, range=1)
 
                 if todays_match_data:
                     for match in todays_match_data:
