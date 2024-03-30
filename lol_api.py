@@ -4,6 +4,7 @@ from dotenv import load_dotenv
 import datetime
 import re
 import mongo_db
+import asyncio
 
 # Load environment variables from .env file
 load_dotenv()
@@ -11,14 +12,19 @@ load_dotenv()
 # Handler function for all calls made to riot api
 async def handle_api_call(url):
     async with aiohttp.ClientSession() as session:
-        async with session.get(url) as response:
-            try:
+        try:
+            async with session.get(url) as response:
+                if response.status == 429:  # Rate limit exceeded
+                    retry_after = int(response.headers.get("Retry-After", 1))
+                    print(f"Rate limit exceeded. Retrying in {retry_after} seconds.")
+                    await asyncio.sleep(retry_after)
+                    return await handle_api_call(url)  # Retry the request
                 response.raise_for_status()  # Raise an exception for non-200 status codes
                 data = await response.json()
                 return data
-            except aiohttp.ClientResponseError as e:
-                print(f"Error in API call: {e.status}, message='{e.message}'")
-                return None
+        except aiohttp.ClientResponseError as e:
+            print(f"Error in API call: {e.status}, message='{e.message}'")
+            return None
 
 async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
     is_proper_format = check_riot_id_format(summoner_riot_id)
