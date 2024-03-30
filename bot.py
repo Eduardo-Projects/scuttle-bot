@@ -26,6 +26,8 @@ async def ping(ctx):
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
+    weekly_report_automatic.start()
+    print("Started weekly report automatic job.")
 
 
 # Runs when bot is added to new discord server
@@ -118,14 +120,16 @@ async def weekly_report(ctx):
     guild_name = ctx.guild.name
     guild_id = ctx.guild.id
 
-    await ctx.send(f"*Loading weekly report for **{guild_name}** ...*")
+    await ctx.send(
+        f"*Loading weekly report for **{guild_name}**, this may take a few minutes ...*"
+    )
 
     stats = await lol_api.fetch_weekly_report(guild_id)
-    summoners = await mongo_db.get_summoners(guild_id)
-    summoners_names = [summoner["name"] for summoner in summoners]
-    summoners_names_formatted = ", ".join(summoners_names)
 
     if stats:
+        summoners = await mongo_db.get_summoners(guild_id)
+        summoners_names = [summoner["name"] for summoner in summoners]
+        summoners_names_formatted = ", ".join(summoners_names)
         formatted_stats_data = [
             f"{item['Key']}:\n{item['Name']} - {item['Max Value']}\n" for item in stats
         ]
@@ -139,6 +143,47 @@ async def weekly_report(ctx):
         await ctx.send(
             f"**Error fetching weekly report. Make sure you have added summoners to your server with !add_summoner 'Name #Tag'**"
         )
+
+
+# Automatic task that fetches and displays a weekly report every Sunday at 8:00 pm
+@tasks.loop(minutes=1)
+async def weekly_report_automatic():
+    now = datetime.now()
+
+    # check if it is 8:00 pm on a Sunday
+    if now.weekday() == 6 and now.hour == 20 and now.minute == 00:
+        guild_id = int(os.getenv("BOT_GUILD_ID"))
+        channel_id = int(os.getenv("BOT_CHANNEL_ID"))
+        channel = bot.get_channel(channel_id)
+
+        print(f"Getting weekly report for Guild with ID: {guild_id}")
+        if channel:
+            await channel.send(
+                f"*Loading weekly report, this may take a few minutes ...*"
+            )
+
+            stats = await lol_api.fetch_weekly_report(guild_id)
+
+            if stats:
+                summoners = await mongo_db.get_summoners(guild_id)
+                summoners_names = [summoner["name"] for summoner in summoners]
+                summoners_names_formatted = ", ".join(summoners_names)
+                formatted_stats_data = [
+                    f"{item['Key']}:\n{item['Name']} - {item['Max Value']}\n"
+                    for item in stats
+                ]
+                formatted_stats_data = "\n".join(formatted_stats_data)
+                formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
+
+                await channel.send(
+                    f"**Weekly Report. Summoners analyzed: {summoners_names_formatted}** {formatted_stats_output}"
+                )
+            else:
+                await channel.send(
+                    f"**Error fetching weekly report. Make sure you have added summoners to your server with !add_summoner 'Name #Tag'**"
+                )
+        else:
+            print("Channel not found.")
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
