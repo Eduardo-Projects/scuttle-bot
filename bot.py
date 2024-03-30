@@ -25,8 +25,8 @@ async def on_ready():
     weekly_report_automatic.start()
     print("Started weekly report automatic job.")
 
-    # fetch_all_summoner_match_data.start()
-    # print("Started automatic summoner match data fetch job.")
+    fetch_all_summoner_match_data.start()
+    print("Started automatic summoner match data fetch job.")
 
 
 # Runs when bot is added to new discord server
