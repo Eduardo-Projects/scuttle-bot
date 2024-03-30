@@ -14,12 +14,13 @@ client = MongoClient(os.getenv("MONGO_DB_URI"), tlsCAFile=ca)
 db = client["league_discord_bot"]
 
 
+# Adds riot id and puuid to summoners list of the corresponding discord server in database
 async def add_summoner(summoner_riot_id, guild_id):
-    puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
     # check if riot user exists before inserting into db
+    puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
     if puuid:
         collection = db.discord_servers
-        # Update or insert  summoner riot id into the summoners array for the server
+        # Update or insert  summoner riot id into the summoners array for the corresponding discord server
         result = collection.update_one(
             {"guild_id": guild_id},
             {"$addToSet": {"summoners": {"name": summoner_riot_id, "puuid": puuid}}},
@@ -34,10 +35,13 @@ async def add_summoner(summoner_riot_id, guild_id):
             print(
                 f"Failed to insert document into MongoDB for summoner '{summoner_riot_id}'."
             )
-
+    print(
+        f"Failed to add summoner {summoner_riot_id} to database. Make sure this is a real riot account"
+    )
     return False
 
 
+# Retrieves a list of all summoners for given discord server
 async def get_summoners(guild_id):
     # Retrieve the document for the server
     collection = db.discord_servers
@@ -50,6 +54,7 @@ async def get_summoners(guild_id):
     return None
 
 
+# Creates and inserts a new discord server in database
 async def add_guild(guild_name, guild_id):
     collection = db.discord_servers
     document = {"name": guild_name, "guild_id": guild_id, "date_added": datetime.now()}
