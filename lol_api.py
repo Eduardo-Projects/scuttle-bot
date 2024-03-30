@@ -143,6 +143,7 @@ def calculate_stats(summoner_puuid, matches_data):
         return data
 
 # Checks to make sure provided riot id follows format: 'String1 #String2'
+# Keep in mind there can be any number of strings before the #
 def check_riot_id_format(riot_id):
     pattern = r'^[\w]+(?:\s[\w]+)*\s#[\w]+$'
 
