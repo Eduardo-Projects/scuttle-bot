@@ -74,7 +74,9 @@ async def stats_weekly(ctx, summoner_riot_id: str):
             f"**Summoner {summoner_riot_id}'s stats for the past 7 days.** {formatted_stats_data}"
         )
     else:
-        await ctx.send(f"Error getting data for summoner **{summoner_riot_id}**.")
+        await ctx.send(
+            f"Error getting data for summoner **{summoner_riot_id}**. Make sure this user exists."
+        )
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
