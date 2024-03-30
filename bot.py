@@ -39,7 +39,13 @@ async def on_guild_join(guild):
     name="add_summoner", help="Adds a League of Legends summoner name to track."
 )
 async def add_summoner(ctx, summoner_riot_id: str):
-    summoner_added = await mongo_db.add_summoner(summoner_riot_id)
+    # Ensure this is not a DM
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
+
+    guild_id = ctx.guild.id
+    summoner_added = await mongo_db.add_summoner(summoner_riot_id, guild_id)
     if summoner_added:
         await ctx.send(f"Summoner {summoner_riot_id} added.")
     else:

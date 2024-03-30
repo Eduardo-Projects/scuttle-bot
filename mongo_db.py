@@ -14,19 +14,20 @@ client = MongoClient(os.getenv("MONGO_DB_URI"), tlsCAFile=ca)
 db = client["league_discord_bot"]
 
 
-async def add_summoner(summoner_riot_id):
+async def add_summoner(summoner_riot_id, guild_id):
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
+    # check if riot user exists before inserting into db
     if puuid:
-        collection = db.summoners
-        document = {
-            "name": summoner_riot_id,
-            "puuid": puuid,
-            "last_checked": 0,
-        }
-        result = collection.insert_one(document)
+        collection = db.discord_servers
+        # Update or insert  summoner riot id into the summoners array for the server
+        result = collection.update_one(
+            {"guild_id": guild_id},
+            {"$addToSet": {"summoners": summoner_riot_id}},
+            upsert=True,  # Creates a new document if one doesn't exist
+        )
         if result.acknowledged:
             print(
-                f"Document for summoner '{summoner_riot_id}' was successfully inserted into MongoDB with _id: {result.inserted_id}"
+                f"Document for summoner '{summoner_riot_id}' was successfully added to Guild with id {guild_id}"
             )
             return True
         else:
