@@ -58,15 +58,22 @@ async def get_summoners(guild_id):
 # Creates and inserts a new discord server in database
 async def add_guild(guild_name, guild_id):
     collection = db.discord_servers
-    document = {"name": guild_name, "guild_id": guild_id, "date_added": datetime.now()}
 
-    result = collection.insert_one(document)
-    if result.acknowledged:
-        print(
-            f"Document for guild '{guild_name}' was successfully inserted into MongoDB with _id: {result.inserted_id}"
-        )
+    if collection.count_documents({"guild_id": guild_id}) == 0:
+        document = {
+            "name": guild_name,
+            "guild_id": guild_id,
+            "date_added": datetime.now(),
+        }
+        result = collection.insert_one(document)
+        if result.acknowledged:
+            print(
+                f"Document for guild '{guild_name}' was successfully inserted into MongoDB with _id: {result.inserted_id}"
+            )
+        else:
+            print(f"Failed to insert document into MongoDB for guild '{guild_name}'.")
     else:
-        print(f"Failed to insert document into MongoDB for guild '{guild_name}'.")
+        print(f"A document with the guild_id '{guild_id}' already exists.")
 
 
 # Sets the main channel for a discord server in database
