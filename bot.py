@@ -151,7 +151,7 @@ async def weekly_report_automatic():
     now = datetime.now()
 
     # check if it is 8:00 pm on a Sunday
-    if now.weekday() == 5 and now.hour == 3 and now.minute == 7:
+    if now.weekday() == 6 and now.hour == 20 and now.minute == 0:
         all_guilds = bot.guilds
         for guild in all_guilds:
             guild_id = guild.id
