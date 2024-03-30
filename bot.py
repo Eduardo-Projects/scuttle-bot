@@ -216,10 +216,13 @@ async def set_main_channel(ctx):
 
 
 # Periodically retrieves the match data for all summoners on all servers and stores it in database
-@tasks.loop(hours=4)
+@tasks.loop(minutes=1)
 async def fetch_all_summoner_match_data():
-    all_guilds = bot.guilds
-    await lol_api.fetch_all_summoner_match_data(all_guilds, range=1)
+    now = datetime.now()
+    # runs at every 4 hours on the our starting at 00:00
+    if now.hour % 4 == 0 and now.minute == 00:
+        all_guilds = bot.guilds
+        await lol_api.fetch_all_summoner_match_data(all_guilds, range=1)
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
