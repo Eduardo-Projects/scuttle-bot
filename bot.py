@@ -26,8 +26,12 @@ async def ping(ctx):
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
+
     weekly_report_automatic.start()
     print("Started weekly report automatic job.")
+
+    fetch_all_summoner_match_data.start()
+    print("Started automatic summoner match data fetch job.")
 
 
 # Runs when bot is added to new discord server
@@ -214,6 +218,39 @@ async def set_main_channel(ctx):
         await ctx.send(
             "\nFailed to set main channel. Make sure this is not already the main channel."
         )
+
+
+# Periodically retrieves the match data for all summoners on all servers and stores it in database
+@tasks.loop(hours=4)
+async def fetch_all_summoner_match_data():
+    all_guilds = bot.guilds
+    print(f"\nFetching all summoner match data.")
+
+    # iterate through every registered guild
+    for guild in all_guilds:
+        print(f"\nFetching all summoner match data for guild {guild.name}")
+
+        summoners = await mongo_db.get_summoners(guild.id)
+        if summoners:
+            # iterate through all summoners within guild
+            for summoner in summoners:
+                print(f"\nFetching summoner match data for summoner {summoner["name"]}")  
+                puuid = summoner["puuid"]
+                name = summoner["name"]
+
+                await mongo_db.handle_summoner_in_match_data_collection(summoner_puuid=puuid, summoner_name=name)
+                todays_match_data = await lol_api.fetch_matches_data_by_day_range(summoner_puuid=puuid, range=7)
+
+                if todays_match_data:
+                    for match in todays_match_data:
+                        await mongo_db.add_match_data(summoner_puuid=puuid, match_data=match)
+        else:
+            print(f"No summoners in guild {guild.name} to fetch data for")
+
+        print(f"\nDone fetching all summoner match data for guild {guild.name}")
+    
+    print(f"\nDone fetching all summoner match data.")
+    
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))

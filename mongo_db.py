@@ -99,3 +99,49 @@ async def get_main_channel(guild_id):
         return main_channel_id
     else:
         print(f"Document with Guild ID {guild_id} not found")
+
+
+# Checks if user is registered in summoner_match_data collection
+# If not, creates a document for them
+async def handle_summoner_in_match_data_collection(summoner_puuid, summoner_name):
+    collection = db.summoner_match_data
+    # Attempt to find the document
+    document = collection.find_one({"puuid": summoner_puuid})
+
+    # Check if the document was found
+    if document:
+        print(f"Document found for summoner with puuid {summoner_puuid}")
+    else:
+        print("Document not found. Creating one...")
+        new_document = {
+            "name": summoner_name,
+            "puuid": summoner_puuid,
+        }
+        result = collection.insert_one(new_document)
+        print(
+            "New document created in summoner_match_data with _id:", result.inserted_id
+        )
+
+
+# Adds match data for specific summoner to db
+async def add_match_data(summoner_puuid, match_data):
+    match_id = match_data["metadata"]["matchId"]
+    collection = db.summoner_match_data
+
+    # Attempt to find the document corresponding to summoner first
+    document_exists = collection.find_one({"puuid": summoner_puuid}) is not None
+
+    if document_exists:
+        result = collection.update_one(
+            {"puuid": summoner_puuid},
+            {"$addToSet": {"matches_data": match_data}},
+        )
+
+        if result.modified_count > 0:
+            print(
+                f"Match with id {match_id} was added to summoner {summoner_puuid}'s match data"
+            )
+        else:
+            print(f"No update made. {summoner_puuid} already contains match {match_id}")
+    else:
+        print("Document does not exist, and no upsert was performed.")
