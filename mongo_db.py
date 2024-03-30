@@ -66,3 +66,36 @@ async def add_guild(guild_name, guild_id):
         )
     else:
         print(f"Failed to insert document into MongoDB for guild '{guild_name}'.")
+
+
+# Sets the main channel for a discord server in database
+# The main channel is where automatic messages will be sent
+async def set_main_channel(guild_id, channel_id):
+    collection = db.discord_servers
+    result = collection.update_one(
+        {"guild_id": guild_id},
+        {"$set": {"main_channel_id": channel_id}},
+        upsert=True,  # Creates a new document if one doesn't exist
+    )
+
+    # Check if the document was updated
+    if result.modified_count > 0:
+        print(f"\nMain channel for Guild with ID {guild_id} updated to {channel_id}.")
+        return True
+    else:
+        print(
+            "\nNo document matches the provided query, or the document already has the specified value for main_channel_id."
+        )
+    return False
+
+
+# Retrieves the main_channel_id for a specific discord server
+async def get_main_channel(guild_id):
+    collection = db.discord_servers
+    document = collection.find_one({"guild_id": guild_id})
+
+    if document:
+        main_channel_id = document.get("main_channel_id", None)
+        return main_channel_id
+    else:
+        print(f"Document with Guild ID {guild_id} not found")

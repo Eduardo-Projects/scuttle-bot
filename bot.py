@@ -151,39 +151,69 @@ async def weekly_report_automatic():
     now = datetime.now()
 
     # check if it is 8:00 pm on a Sunday
-    if now.weekday() == 6 and now.hour == 20 and now.minute == 00:
-        guild_id = int(os.getenv("BOT_GUILD_ID"))
-        channel_id = int(os.getenv("BOT_CHANNEL_ID"))
-        channel = bot.get_channel(channel_id)
+    if now.weekday() == 5 and now.hour == 3 and now.minute == 7:
+        all_guilds = bot.guilds
+        for guild in all_guilds:
+            guild_id = guild.id
+            channel_id = await mongo_db.get_main_channel(guild_id)
 
-        print(f"Getting weekly report for Guild with ID: {guild_id}")
-        if channel:
-            await channel.send(
-                f"*Loading weekly report, this may take a few minutes ...*"
-            )
+            print(f"\nGetting weekly report for Guild with ID: {guild_id}")
 
-            stats = await lol_api.fetch_weekly_report(guild_id)
+            if channel_id:
+                channel = bot.get_channel(channel_id)
 
-            if stats:
-                summoners = await mongo_db.get_summoners(guild_id)
-                summoners_names = [summoner["name"] for summoner in summoners]
-                summoners_names_formatted = ", ".join(summoners_names)
-                formatted_stats_data = [
-                    f"{item['Key']}:\n{item['Name']} - {item['Max Value']}\n"
-                    for item in stats
-                ]
-                formatted_stats_data = "\n".join(formatted_stats_data)
-                formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
+                if channel:
+                    await channel.send(
+                        f"*Loading weekly report, this may take a few minutes ...*"
+                    )
 
-                await channel.send(
-                    f"**Weekly Report. Summoners analyzed: {summoners_names_formatted}** {formatted_stats_output}"
-                )
+                    stats = await lol_api.fetch_weekly_report(guild_id)
+
+                    if stats:
+                        summoners = await mongo_db.get_summoners(guild_id)
+                        summoners_names = [summoner["name"] for summoner in summoners]
+                        summoners_names_formatted = ", ".join(summoners_names)
+                        formatted_stats_data = [
+                            f"{item['Key']}:\n{item['Name']} - {item['Max Value']}\n"
+                            for item in stats
+                        ]
+                        formatted_stats_data = "\n".join(formatted_stats_data)
+                        formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
+
+                        await channel.send(
+                            f"**Weekly Report. Summoners analyzed: {summoners_names_formatted}** {formatted_stats_output}"
+                        )
+                    else:
+                        await channel.send(
+                            f"**Error fetching weekly report. Make sure you have added summoners to your server with !add_summoner 'Name #Tag'**"
+                        )
+                else:
+                    print("Channel not found.")
             else:
-                await channel.send(
-                    f"**Error fetching weekly report. Make sure you have added summoners to your server with !add_summoner 'Name #Tag'**"
-                )
-        else:
-            print("Channel not found.")
+                print(f"Guild with id {guild_id} does not have a main channel set.")
+
+
+# Sets the text channel where automatic messages will be sent, such as weekly reports
+@bot.command(
+    name="set_main_channel",
+    help="Sets the text channel where automatic messages will be sent",
+)
+async def set_main_channel(ctx):
+    # Ensure the command is being called from a discord server
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
+
+    guild_id = ctx.guild.id
+    channel_id = ctx.channel.id
+    main_channel_changed = await mongo_db.set_main_channel(guild_id, channel_id)
+
+    if main_channel_changed:
+        await ctx.send("\nMain channel set.")
+    else:
+        await ctx.send(
+            "\nFailed to set main channel. Make sure this is not already the main channel."
+        )
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
