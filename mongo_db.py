@@ -181,48 +181,64 @@ async def fetch_match_data_by_day_range(summoner_puuid, range=7):
 async def fetch_weekly_report(guild_id):
     print(f"Fetching weekly report for guild with id {guild_id}")
 
-    agg_stats = []
-    summoners = await get_summoners(guild_id)
+    guild_data = db.discord_servers.find_one({"guild_id": guild_id})
+    if guild_data:
+        # if guild was added less than 1 week ago, fetch match data for past week
+        current_date = datetime.now()
+        date_added = guild_data["date_added"]
+        seven_days_ago = current_date - timedelta(days=7)
+        was_added_within_past_week = seven_days_ago <= date_added <= current_date
 
-    if summoners:
-        for summoner in summoners:
-            puuid = summoner["puuid"]
-            matches_data = await fetch_match_data_by_day_range(
-                summoner_puuid=puuid, range=7
+        if was_added_within_past_week:
+            print(
+                f"Guild {guild_id} was added within the past week. Retrieiving match data for past 7 days."
             )
-            stats = utils.calculate_stats(
-                summoner_puuid=puuid, matches_data=matches_data
+            await lol_api.fetch_all_summoner_match_data_by_guild(guild_id, range=7)
+
+        agg_stats = []
+        summoners = await get_summoners(guild_id)
+
+        if summoners:
+            for summoner in summoners:
+                puuid = summoner["puuid"]
+                matches_data = await fetch_match_data_by_day_range(
+                    summoner_puuid=puuid, range=7
+                )
+                stats = utils.calculate_stats(
+                    summoner_puuid=puuid, matches_data=matches_data
+                )
+                weekly_stats_with_name = stats.copy()
+                weekly_stats_with_name["Name"] = summoner["name"]
+                agg_stats.append(weekly_stats_with_name)
+
+            # Extract keys excluding 'Name'
+            keys = [key for key in agg_stats[0] if key != "Name"]
+
+            # Initialize a dictionary to store max values and corresponding names
+            max_values = {key: {"value": float("-inf"), "Name": None} for key in keys}
+
+            # Update max_values with the max value for each key and corresponding name
+            for item in agg_stats:
+                for key in keys:
+                    if item[key] > max_values[key]["value"]:
+                        max_values[key] = {"value": item[key], "Name": item["Name"]}
+
+            # Convert the result into a list of dictionaries as specified
+            result = [
+                {
+                    "Key": key,
+                    "Max Value": max_values[key]["value"],
+                    "Name": max_values[key]["Name"],
+                }
+                for key in max_values
+            ]
+
+            print(
+                f"Finished fetching weekly report for guild with id {guild_id}. Compared stats of {len(summoners)} summoners."
             )
-            weekly_stats_with_name = stats.copy()
-            weekly_stats_with_name["Name"] = summoner["name"]
-            agg_stats.append(weekly_stats_with_name)
-
-        # Extract keys excluding 'Name'
-        keys = [key for key in agg_stats[0] if key != "Name"]
-
-        # Initialize a dictionary to store max values and corresponding names
-        max_values = {key: {"value": float("-inf"), "Name": None} for key in keys}
-
-        # Update max_values with the max value for each key and corresponding name
-        for item in agg_stats:
-            for key in keys:
-                if item[key] > max_values[key]["value"]:
-                    max_values[key] = {"value": item[key], "Name": item["Name"]}
-
-        # Convert the result into a list of dictionaries as specified
-        result = [
-            {
-                "Key": key,
-                "Max Value": max_values[key]["value"],
-                "Name": max_values[key]["Name"],
-            }
-            for key in max_values
-        ]
-
-        print(
-            f"Finished fetching weekly report for guild with id {guild_id}. Compared stats of {len(summoners)} summoners."
-        )
-        return result
+            return result
+        else:
+            print(f"No summoners found for guild with id {guild_id}.")
+            return None
     else:
-        print(f"No summoners found for guild with id {guild_id}.")
-        return None
+        print(f"Guild {guild_id} does not exist in the database")

@@ -16,6 +16,7 @@ intents.guilds = True  # If your bot needs to work with guild (server) informati
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
+
 # Event that runs only when bot first starts up
 @bot.event
 async def on_ready():
@@ -24,8 +25,8 @@ async def on_ready():
     weekly_report_automatic.start()
     print("Started weekly report automatic job.")
 
-    fetch_all_summoner_match_data.start()
-    print("Started automatic summoner match data fetch job.")
+    # fetch_all_summoner_match_data.start()
+    # print("Started automatic summoner match data fetch job.")
 
 
 # Runs when bot is added to new discord server
@@ -218,41 +219,7 @@ async def set_main_channel(ctx):
 @tasks.loop(hours=4)
 async def fetch_all_summoner_match_data():
     all_guilds = bot.guilds
-    print(f"\nFetching all summoner match data.")
-
-    # iterate through every registered guild
-    for guild in all_guilds:
-        start_time = datetime.now()
-        formatted_start_time = start_time.strftime("%m/%d/%y %H:%M:%S")
-        print(f"\nFetching all summoner match data for guild {guild.name}. Started at {formatted_start_time}")
-
-        summoners = await mongo_db.get_summoners(guild.id)
-        if summoners:
-            # iterate through all summoners within guild
-            for summoner in summoners:
-                print(f"\nFetching summoner match data for summoner {summoner["name"]}")  
-                puuid = summoner["puuid"]
-                name = summoner["name"]
-
-                await mongo_db.handle_summoner_in_match_data_collection(summoner_puuid=puuid, summoner_name=name)
-                todays_match_data = await lol_api.fetch_matches_data_by_day_range(summoner_puuid=puuid, range=1)
-
-                if todays_match_data:
-                    for match in todays_match_data:
-                        await mongo_db.add_match_data(summoner_puuid=puuid, match_data=match)
-        else:
-            print(f"No summoners in guild {guild.name} to fetch data for")
-
-        print(f"\nDone fetching all summoner match data for guild {guild.name}")
-    
-    end_time = datetime.now()
-    elapsed_time = end_time - start_time
-    total_seconds = int(elapsed_time.total_seconds())
-    hours = total_seconds // 3600
-    minutes = (total_seconds % 3600) // 60
-    seconds = total_seconds % 60
-    formatted_elapsed_time = f"{hours:02}:{minutes:02}:{seconds:02}"
-    print(f"\nDone fetching all summoner match data. Took {formatted_elapsed_time}")
+    await lol_api.fetch_all_summoner_match_data(all_guilds, range=1)
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
