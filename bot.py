@@ -73,7 +73,7 @@ async def stats(ctx, summoner_riot_id: str):
 
 
 @bot.command(name="last_game")
-async def stats(ctx, summoner_riot_id: str):
+async def last_game(ctx, summoner_riot_id: str):
     await ctx.send(
         f"*Loading last game ranked solo queue stats for **{summoner_riot_id}** ...*"
     )
@@ -96,9 +96,14 @@ async def stats(ctx, summoner_riot_id: str):
 
 @bot.command(name="test_weekly_report")
 async def test_weekly_report(ctx):
-    await ctx.send(f"*Loading weekly report ...*")
+    # Ensure this is not a DM
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
 
-    summoners = await mongo_db.get_summoners()
+    await ctx.send(f"*Loading weekly report ...*")
+    guild_id = ctx.guild.id
+    summoners = await mongo_db.get_summoners(guild_id)
     summoner_names = []
     stats = await lol_api.fetch_summoner_stats_batch(summoners)
 

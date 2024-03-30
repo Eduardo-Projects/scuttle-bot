@@ -22,7 +22,7 @@ async def add_summoner(summoner_riot_id, guild_id):
         # Update or insert  summoner riot id into the summoners array for the server
         result = collection.update_one(
             {"guild_id": guild_id},
-            {"$addToSet": {"summoners": summoner_riot_id}},
+            {"$addToSet": {"summoners": {"name": summoner_riot_id, "puuid": puuid}}},
             upsert=True,  # Creates a new document if one doesn't exist
         )
         if result.acknowledged:
@@ -38,8 +38,16 @@ async def add_summoner(summoner_riot_id, guild_id):
     return False
 
 
-async def get_summoners():
-    return list(db.summoners.find({}, {"_id": 0, "name": 1, "puuid": 1}))
+async def get_summoners(guild_id):
+    # Retrieve the document for the server
+    collection = db.discord_servers
+    document = collection.find_one({"guild_id": guild_id})
+
+    if document and "summoners" in document:
+        summoners_list = document["summoners"]
+        return summoners_list
+
+    return None
 
 
 async def add_guild(guild_name, guild_id):
