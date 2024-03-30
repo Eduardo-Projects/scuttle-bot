@@ -16,7 +16,7 @@ async def handle_api_call(url):
                 data = await response.json()
                 return data
             except aiohttp.ClientResponseError as e:
-                print(f"Error in API call: {e.status}")
+                print(f"Error in API call: {e.status}, message='{e.message}'")
                 return None
 
 async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
@@ -59,7 +59,7 @@ async def fetch_matches_data_by_day_range(summoner_puuid, range=7, queue_id=420)
         print(f"{len(matches_data)} matches were found for summoner with puuid {summoner_puuid} in the last {range} days")
         return matches_data
 
-# Fetches stats for summoner for a given day range
+# Fetches stats for all matches played in the last {range} days
 async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
     matches_data = await fetch_matches_data_by_day_range(summoner_puuid, range)
     stats = calculate_stats(summoner_puuid, matches_data)
