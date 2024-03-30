@@ -16,12 +16,6 @@ intents.guilds = True  # If your bot needs to work with guild (server) informati
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
-
-@bot.command(name="ping")
-async def ping(ctx):
-    await ctx.send("Pong!")
-
-
 # Event that runs only when bot first starts up
 @bot.event
 async def on_ready():
@@ -128,7 +122,7 @@ async def weekly_report(ctx):
         f"*Loading weekly report for **{guild_name}**, this may take a few minutes ...*"
     )
 
-    stats = await lol_api.fetch_weekly_report(guild_id)
+    stats = await mongo_db.fetch_weekly_report(guild_id)
 
     if stats:
         summoners = await mongo_db.get_summoners(guild_id)
@@ -155,7 +149,7 @@ async def weekly_report_automatic():
     now = datetime.now()
 
     # check if it is 8:00 pm on a Sunday
-    if now.weekday() == 6 and now.hour == 20 and now.minute == 0:
+    if now.weekday() == 6 and now.hour == 20 and now.minute == 00:
         all_guilds = bot.guilds
         for guild in all_guilds:
             guild_id = guild.id
@@ -171,7 +165,7 @@ async def weekly_report_automatic():
                         f"*Loading weekly report, this may take a few minutes ...*"
                     )
 
-                    stats = await lol_api.fetch_weekly_report(guild_id)
+                    stats = await mongo_db.fetch_weekly_report(guild_id)
 
                     if stats:
                         summoners = await mongo_db.get_summoners(guild_id)
@@ -259,7 +253,6 @@ async def fetch_all_summoner_match_data():
     seconds = total_seconds % 60
     formatted_elapsed_time = f"{hours:02}:{minutes:02}:{seconds:02}"
     print(f"\nDone fetching all summoner match data. Took {formatted_elapsed_time}")
-    
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))

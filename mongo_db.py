@@ -3,7 +3,8 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import lol_api
 import certifi
-from datetime import datetime
+from datetime import datetime, timedelta
+import utils
 
 # Load environment variables from .env file
 load_dotenv()
@@ -145,3 +146,83 @@ async def add_match_data(summoner_puuid, match_data):
             print(f"No update made. {summoner_puuid} already contains match {match_id}")
     else:
         print("Document does not exist, and no upsert was performed.")
+
+
+# Retrieves match data from db for given summoner id within specified time frame
+async def fetch_match_data_by_day_range(summoner_puuid, range=7):
+    start_time = datetime.now() - timedelta(days=range)
+    start_time_timestamp = int(start_time.timestamp() * 1000)
+
+    collection = db.summoner_match_data
+    summoner_document = collection.find_one({"puuid": summoner_puuid})
+    if summoner_document:
+        matches_data = summoner_document.get("matches_data", None)
+        if matches_data:
+            matches_within_range = [
+                match
+                for match in matches_data
+                if match["info"]["gameStartTimestamp"] >= start_time_timestamp
+            ]
+            return matches_within_range
+        else:
+            print(
+                f"Summoenr {summoner_puuid} does not gave any match data in the database."
+            )
+    else:
+        print(
+            f"Summoner {summoner_puuid} does not have a document in the summoner_match_data collection."
+        )
+
+    return None
+
+
+# Fetch weekly report of stats for all summoners in a discord server
+# The report will display which summoner has the highest value for each stat
+async def fetch_weekly_report(guild_id):
+    print(f"Fetching weekly report for guild with id {guild_id}")
+
+    agg_stats = []
+    summoners = await get_summoners(guild_id)
+
+    if summoners:
+        for summoner in summoners:
+            puuid = summoner["puuid"]
+            matches_data = await fetch_match_data_by_day_range(
+                summoner_puuid=puuid, range=7
+            )
+            stats = utils.calculate_stats(
+                summoner_puuid=puuid, matches_data=matches_data
+            )
+            weekly_stats_with_name = stats.copy()
+            weekly_stats_with_name["Name"] = summoner["name"]
+            agg_stats.append(weekly_stats_with_name)
+
+        # Extract keys excluding 'Name'
+        keys = [key for key in agg_stats[0] if key != "Name"]
+
+        # Initialize a dictionary to store max values and corresponding names
+        max_values = {key: {"value": float("-inf"), "Name": None} for key in keys}
+
+        # Update max_values with the max value for each key and corresponding name
+        for item in agg_stats:
+            for key in keys:
+                if item[key] > max_values[key]["value"]:
+                    max_values[key] = {"value": item[key], "Name": item["Name"]}
+
+        # Convert the result into a list of dictionaries as specified
+        result = [
+            {
+                "Key": key,
+                "Max Value": max_values[key]["value"],
+                "Name": max_values[key]["Name"],
+            }
+            for key in max_values
+        ]
+
+        print(
+            f"Finished fetching weekly report for guild with id {guild_id}. Compared stats of {len(summoners)} summoners."
+        )
+        return result
+    else:
+        print(f"No summoners found for guild with id {guild_id}.")
+        return None
