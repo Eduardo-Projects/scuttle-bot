@@ -228,7 +228,9 @@ async def fetch_all_summoner_match_data():
 
     # iterate through every registered guild
     for guild in all_guilds:
-        print(f"\nFetching all summoner match data for guild {guild.name}")
+        start_time = datetime.now()
+        formatted_start_time = start_time.strftime("%m/%d/%y %H:%M:%S")
+        print(f"\nFetching all summoner match data for guild {guild.name}. Started at {formatted_start_time}")
 
         summoners = await mongo_db.get_summoners(guild.id)
         if summoners:
@@ -249,7 +251,14 @@ async def fetch_all_summoner_match_data():
 
         print(f"\nDone fetching all summoner match data for guild {guild.name}")
     
-    print(f"\nDone fetching all summoner match data.")
+    end_time = datetime.now()
+    elapsed_time = end_time - start_time
+    total_seconds = int(elapsed_time.total_seconds())
+    hours = total_seconds // 3600
+    minutes = (total_seconds % 3600) // 60
+    seconds = total_seconds % 60
+    formatted_elapsed_time = f"{hours:02}:{minutes:02}:{seconds:02}"
+    print(f"\nDone fetching all summoner match data. Took {formatted_elapsed_time}")
     
 
 
