@@ -3,6 +3,7 @@ import aiohttp
 from dotenv import load_dotenv
 import datetime
 import re
+import mongo_db
 
 # Load environment variables from .env file
 load_dotenv()
@@ -65,6 +66,42 @@ async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
     stats = calculate_stats(summoner_puuid, matches_data)
     return stats
 
+# Fetch weekly report of stats for all summoners in a discord server
+# The report will display which summoner has the highest value for each stat
+async def fetch_weekly_report(guild_id):
+    print(f"Fetching weekly report for guild with id {guild_id}")
+
+    agg_stats = []
+    summoners = await mongo_db.get_summoners(guild_id)
+    
+    if summoners:
+        for summoner in summoners:
+            summoner_stats = await fetch_summoner_stats_by_day_range(summoner_puuid=summoner["puuid"], range=7)
+            weekly_stats_with_name = summoner_stats.copy()
+            weekly_stats_with_name["Name"] = summoner["name"]
+            agg_stats.append(weekly_stats_with_name)
+
+        # Extract keys excluding 'Name'
+        keys = [key for key in agg_stats[0] if key != 'Name']
+
+        # Initialize a dictionary to store max values and corresponding names
+        max_values = {key: {'value': float('-inf'), 'Name': None} for key in keys}
+
+        # Update max_values with the max value for each key and corresponding name
+        for item in agg_stats:
+            for key in keys:
+                if item[key] > max_values[key]['value']:
+                    max_values[key] = {'value': item[key], 'Name': item['Name']}
+        
+        # Convert the result into a list of dictionaries as specified
+        result = [{'Key': key, 'Max Value': max_values[key]['value'], 'Name': max_values[key]['Name']} for key in max_values]
+
+        print(f"Finished fetching weekly report for guild with id {guild_id}. Compared stats of {len(summoners)} summoners.")
+        return result
+    else:
+        print(f"No summoners found for guild with id {guild_id}.")
+        return None
+
 # Calculates stats for a summoner with a given set of matches data
 def calculate_stats(summoner_puuid, matches_data):
     data_keys = ['Total Matches', 'Average Assists', 'Ability Uses', 'Average Damage Per Minute', 'Average Gold Per Minute',  
@@ -107,7 +144,7 @@ def calculate_stats(summoner_puuid, matches_data):
 
 # Checks to make sure provided riot id follows format: 'String1 #String2'
 def check_riot_id_format(riot_id):
-    pattern = r'^[^\s]+\s\#[^\s]+$'
+    pattern = r'^[\w]+(?:\s[\w]+)*\s#[\w]+$'
 
     if re.match(pattern, riot_id):
         return True

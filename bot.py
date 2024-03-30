@@ -79,7 +79,7 @@ async def show_summoners(ctx):
         )
 
 
-# Retrives a summoner's formatted weekly stats
+# Displays a summoner's formatted weekly stats
 @bot.command(
     name="stats_weekly", help="Retrives a summoner's formatted weekly solo queue stats."
 )
@@ -102,6 +102,42 @@ async def stats_weekly(ctx, summoner_riot_id: str):
     else:
         await ctx.send(
             f"Error getting data for summoner **{summoner_riot_id}**. Make sure this user exists."
+        )
+
+
+# Displays discord server's formatted overall stats for all summoners
+@bot.command(
+    name="weekly_report", help="Displays discord server's formatted overall stats"
+)
+async def weekly_report(ctx):
+    # Ensure the command is being called from a discord server
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
+
+    guild_name = ctx.guild.name
+    guild_id = ctx.guild.id
+
+    await ctx.send(f"*Loading weekly report for **{guild_name}** ...*")
+
+    stats = await lol_api.fetch_weekly_report(guild_id)
+    summoners = await mongo_db.get_summoners(guild_id)
+    summoners_names = [summoner["name"] for summoner in summoners]
+    summoners_names_formatted = ", ".join(summoners_names)
+
+    if stats:
+        formatted_stats_data = [
+            f"{item['Key']}:\n{item['Name']} - {item['Max Value']}\n" for item in stats
+        ]
+        formatted_stats_data = "\n".join(formatted_stats_data)
+        formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
+
+        await ctx.send(
+            f"**Weekly Report. Summoners analyzed: {summoners_names_formatted}** {formatted_stats_output}"
+        )
+    else:
+        await ctx.send(
+            f"**Error fetching weekly report. Make sure you have added summoners to your server with !add_summoner 'Name #Tag'**"
         )
 
 
