@@ -55,8 +55,34 @@ async def add_summoner(ctx, summoner_riot_id: str):
         await ctx.send(f"Failed to add summoner {summoner_riot_id}.")
 
 
+# Displays a list of all summoners for given discord server
+@bot.command(
+    name="show_summoners",
+    help="Displays a list of all summoners for given discord server",
+)
+async def show_summoners(ctx):
+    # Ensure the command is being called from a discord server
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
+
+    guild_name = ctx.guild.name
+    guild_id = ctx.guild.id
+    summoners = await mongo_db.get_summoners(guild_id)
+
+    if summoners:
+        formatted_output = ", ".join([summoner["name"] for summoner in summoners])
+        await ctx.send(f"{guild_name}'s Summoners: {formatted_output}")
+    else:
+        await ctx.send(
+            f"{guild_name} does not have any summoners. Add summoners by typing !add_summoner 'RiotName #Tag'"
+        )
+
+
 # Retrives a summoner's formatted weekly stats
-@bot.command(name="stats_weekly")
+@bot.command(
+    name="stats_weekly", help="Retrives a summoner's formatted weekly solo queue stats."
+)
 async def stats_weekly(ctx, summoner_riot_id: str):
     await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
 

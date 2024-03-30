@@ -61,12 +61,8 @@ async def fetch_matches_data_by_day_range(summoner_puuid, range=7, queue_id=420)
 
 # Fetches stats for summoner for a given day range
 async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
-    print(f"Fetching stats for summoner with puuid {summoner_puuid} for the past {range} days")
-
     matches_data = await fetch_matches_data_by_day_range(summoner_puuid, range)
     stats = calculate_stats(summoner_puuid, matches_data)
-
-    print(f"Finished calculating stats for summoner with puuid {summoner_puuid} for matches played in the last {range} days")
     return stats
 
 # Calculates stats for a summoner with a given set of matches data
@@ -77,21 +73,24 @@ def calculate_stats(summoner_puuid, matches_data):
     # Initialize the dictionary with keys set to 0
     data = {key: 0 for key in data_keys}
 
+
     if matches_data:
+        print(f"Calculating stats for summoner with puuid {summoner_puuid} for the last {len(matches_data)} matches")
         data["Total Matches"] = len(matches_data)
         for match in matches_data:
             participants = match["info"]["participants"]
             stats = next((obj for obj in participants if obj.get('puuid') == summoner_puuid), None)
+            challenges = stats.get("challenges", {})
             
-            data["Average Assists"] += stats["assists"]
-            data["Ability Uses"] += stats["challenges"]["abilityUses"]
-            data["Skillshots Hit"] += stats["challenges"]["skillshotsHit"]
-            data["Average Solo Kills"] += stats["challenges"]["soloKills"]
-            data["Average Enemy Missing Pings"] += stats["enemyMissingPings"]
-            data["Average Damage Per Minute"] += stats["challenges"]["damagePerMinute"]
-            data["Average Gold Per Minute"] += stats["challenges"]["goldPerMinute"]
-            data["Average KDA"]  += stats["challenges"]["kda"]
-            data["Average Kill Participation"] += stats["challenges"]["killParticipation"]
+            data["Average Assists"] += stats.get("assists", 0)
+            data["Ability Uses"] += challenges.get("abilityUses", 0)
+            data["Skillshots Hit"] += challenges.get("skillshotsHit", 0)
+            data["Average Solo Kills"] += challenges.get("soloKills", 0)
+            data["Average Enemy Missing Pings"] += stats.get("enemyMissingPings", 0)
+            data["Average Damage Per Minute"] += challenges.get("damagePerMinute", 0)
+            data["Average Gold Per Minute"] += challenges.get("goldPerMinute", 0)
+            data["Average KDA"]  += challenges.get("kda", 0)
+            data["Average Kill Participation"] += challenges.get("killParticipation", 0)
             data["Average Team Damage Percentage"] += stats["challenges"]["teamDamagePercentage"]
             data["Average Damage To Champions"] += stats["totalDamageDealtToChampions"]
         
@@ -100,8 +99,10 @@ def calculate_stats(summoner_puuid, matches_data):
         # Round values to 2 decimal places
         rounded_data = {key: round(value, 2) for key, value in data.items()}
 
+        print(f"Finished calculating stats.")
         return rounded_data
     else:
+        print(f"Error calculating stats for summoner with puuid {summoner_puuid}. No matches data provided.")
         return data
 
 # Checks to make sure provided riot id follows format: 'String1 #String2'
