@@ -4,3 +4,4 @@ matches_data.json
 
 __pycache__/
 *.py[cod]
+*.pyc 
