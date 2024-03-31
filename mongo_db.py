@@ -29,22 +29,21 @@ async def add_summoner(summoner_riot_id, guild_id):
         )
         if result.acknowledged:
             print(
-                f"Document for summoner '{summoner_riot_id}' was successfully added to Guild with id {guild_id}"
+                f"\nDocument for summoner '{summoner_riot_id}' was successfully added to Guild with id {guild_id}"
             )
             return True
         else:
             print(
-                f"Failed to insert document into MongoDB for summoner '{summoner_riot_id}'."
+                f"\nFailed to insert document into MongoDB for summoner '{summoner_riot_id}'."
             )
     print(
-        f"Failed to add summoner {summoner_riot_id} to database. Make sure this is a real riot account"
+        f"\nFailed to add summoner {summoner_riot_id} to database. Make sure this is a real riot account"
     )
     return False
 
 
 # Retrieves a list of all summoners for given discord server
 async def get_summoners(guild_id):
-    # Retrieve the document for the server
     collection = db.discord_servers
     document = collection.find_one({"guild_id": guild_id})
 
@@ -79,6 +78,8 @@ async def add_guild(guild_name, guild_id):
 # Sets the main channel for a discord server in database
 # The main channel is where automatic messages will be sent
 async def set_main_channel(guild_id, channel_id):
+    print(f"\nSetting main channel to {channel_id}")
+
     collection = db.discord_servers
     result = collection.update_one(
         {"guild_id": guild_id},
@@ -88,11 +89,11 @@ async def set_main_channel(guild_id, channel_id):
 
     # Check if the document was updated
     if result.modified_count > 0:
-        print(f"\nMain channel for Guild with ID {guild_id} updated to {channel_id}.")
+        print(f"Main channel for Guild with ID {guild_id} updated to {channel_id}.")
         return True
     else:
         print(
-            "\nNo document matches the provided query, or the document already has the specified value for main_channel_id."
+            "No document matches the provided query, or the document already has the specified value for main_channel_id."
         )
     return False
 
@@ -111,6 +112,7 @@ async def get_main_channel(guild_id):
 
 # Fetches stats for all matches played in the last {range} days
 async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
+    print(f"\nFetching {range} day stats for {summoner_puuid}...")
     matches_data = await fetch_all_summoner_match_data_by_range(summoner_puuid, range)
     stats = utils.calculate_stats(summoner_puuid, matches_data)
     return stats
@@ -119,7 +121,7 @@ async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
 # Fetch weekly report of stats for all summoners in a discord server within certain range
 # The report will display which summoner has the highest value for each stat
 async def fetch_report_by_day_range(guild_id, range=7):
-    print(f"Fetching weekly report for guild with id {guild_id}...")
+    print(f"\nFetching {range} day report for guild with id {guild_id}...")
 
     guild_data = db.discord_servers.find_one({"guild_id": guild_id})
     if guild_data:
