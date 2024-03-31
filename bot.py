@@ -35,6 +35,37 @@ async def on_guild_join(guild):
     print(f"Joined new guild: {guild.name} with Guild ID: {guild.id} ")
     await mongo_db.add_guild(guild.name, guild.id)
 
+
+# Sets the text channel where automatic messages will be sent, such as weekly reports
+@bot.command(name="enable",help="Sets the text channel where automatic messages will be sent",)
+async def enable(ctx):
+    # Ensure the command is being called from a discord server
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
+
+    guild_id = ctx.guild.id
+    channel_id = ctx.channel.id
+    main_channel_changed = await mongo_db.set_main_channel(guild_id, channel_id)
+
+    if main_channel_changed:
+        embed = discord.Embed(
+            title=f"✅ Enable Command",
+            description=f"Scuttle enabled on this channel",
+            color=discord.Color.green(),
+        )
+
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title=f"❌ Enable Command",
+            description=f"Scuttle is already enabled on this channel.",
+            color=discord.Color.green(),
+        )
+
+        await ctx.send(embed=embed)
+
+
 # Displays a list of all summoners for given discord server
 @bot.group(invoke_without_command=True)
 async def summoners(ctx):
@@ -65,6 +96,7 @@ async def summoners(ctx):
         )
         await ctx.send(embed=embed)
 
+
 # Adds riot id and puuid to summoners list of the corresponding discord server in database
 @summoners.command(name="add", help="Adds a League of Legends summoner name to track.")
 async def summoners_add(ctx, summoner_riot_id: str):
@@ -93,10 +125,9 @@ async def summoners_add(ctx, summoner_riot_id: str):
         )
         await ctx.send(embed=embed)
 
+
 # Displays a summoner's formatted weekly stats
-@bot.command(
-    name="stats_weekly", help="Retrives a summoner's formatted weekly solo queue stats."
-)
+@bot.command(name="stats_weekly", help="Retrives a summoner's formatted weekly solo queue stats.")
 async def stats_weekly(ctx, summoner_riot_id: str):
     await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
 
@@ -121,9 +152,7 @@ async def stats_weekly(ctx, summoner_riot_id: str):
 
 
 # Displays discord server's formatted overall stats for all summoners
-@bot.command(
-    name="weekly_report", help="Displays discord server's formatted overall stats"
-)
+@bot.command(name="weekly_report", help="Displays discord server's formatted overall stats")
 async def weekly_report(ctx):
     # Ensure the command is being called from a discord server
     if ctx.guild is None:
@@ -207,40 +236,6 @@ async def weekly_report_automatic():
                     print("Channel not found.")
             else:
                 print(f"Guild with id {guild_id} does not have a main channel set.")
-
-
-# Sets the text channel where automatic messages will be sent, such as weekly reports
-@bot.command(
-    name="set_main_channel",
-    help="Sets the text channel where automatic messages will be sent",
-)
-async def set_main_channel(ctx):
-    # Ensure the command is being called from a discord server
-    if ctx.guild is None:
-        await ctx.send("This command must be used in a server.")
-        return
-
-    guild_id = ctx.guild.id
-    channel_id = ctx.channel.id
-    channel_name = ctx.channel.name
-    main_channel_changed = await mongo_db.set_main_channel(guild_id, channel_id)
-
-    if main_channel_changed:
-        embed = discord.Embed(
-            title=f"✅ Set Main Channel Command",
-            description=f"Main channel set to {channel_name}",
-            color=discord.Color.green(),
-        )
-
-        await ctx.send(embed=embed)
-    else:
-        embed = discord.Embed(
-            title=f"❌ Set Main Channel Command",
-            description=f"{channel_name} is already the main channel.",
-            color=discord.Color.green(),
-        )
-
-        await ctx.send(embed=embed)
 
 
 # Periodically retrieves the match data for all summoners on all servers and stores it in database
