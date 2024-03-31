@@ -37,7 +37,7 @@ async def on_guild_join(guild):
 
 
 # Sets the text channel where automatic messages will be sent, such as weekly reports
-@bot.command(name="enable",help="Sets the text channel where automatic messages will be sent",)
+@bot.command(name="enable")
 async def enable(ctx):
     # Ensure the command is being called from a discord server
     if ctx.guild is None:
@@ -98,8 +98,8 @@ async def summoners(ctx):
 
 
 # Adds riot id and puuid to summoners list of the corresponding discord server in database
-@summoners.command(name="add", help="Adds a League of Legends summoner name to track.")
-async def summoners_add(ctx, summoner_riot_id: str):
+@summoners.command(name="add")
+async def summoners_add(ctx, *, summoner_riot_id: str):
     # Ensure the command is being called from a discord server
     if ctx.guild is None:
         await ctx.send("This command must be used in a server.")
@@ -126,9 +126,36 @@ async def summoners_add(ctx, summoner_riot_id: str):
         await ctx.send(embed=embed)
 
 
+# Displays a summoner's formatted daily stats
+@bot.group(invoke_without_command=True)
+async def stats(ctx, *, summoner_riot_id: str):
+    await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
+
+    # Make sure riot id exists
+    puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
+
+    if puuid:
+        stats = await lol_api.fetch_summoner_stats_by_day_range(puuid, range=1)
+        embed = discord.Embed(
+            title=f"📈 Summoner {summoner_riot_id}'s stats for the past 1 day(s).",
+            description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past 1 day(s).",
+            color=discord.Color.green(),
+        )
+        for key, value in stats.items():
+            embed.add_field(name=f"✅ {key}", value=value)
+
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title=f"❌ Stats Command",
+            description=f"Error getting stats for summoner {summoner_riot_id}. Make sure this user exists.",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=embed)
+
 # Displays a summoner's formatted weekly stats
-@bot.command(name="stats_weekly", help="Retrives a summoner's formatted weekly solo queue stats.")
-async def stats_weekly(ctx, summoner_riot_id: str):
+@stats.command(name="weekly")
+async def weekly(ctx, *, summoner_riot_id: str):
     await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
 
     # Make sure riot id exists
@@ -137,8 +164,8 @@ async def stats_weekly(ctx, summoner_riot_id: str):
     if puuid:
         stats = await lol_api.fetch_summoner_stats_by_day_range(puuid, range=7)
         embed = discord.Embed(
-            title=f"📈 Summoner {summoner_riot_id}'s stats for the past 7 days.",
-            description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past 7 days.",
+            title=f"📈 Summoner {summoner_riot_id}'s stats for the past 7 day(s).",
+            description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past 7 day(s).",
             color=discord.Color.green(),
         )
         for key, value in stats.items():
@@ -146,9 +173,40 @@ async def stats_weekly(ctx, summoner_riot_id: str):
 
         await ctx.send(embed=embed)
     else:
-        await ctx.send(
-            f"Error getting data for summoner **{summoner_riot_id}**. Make sure this user exists."
+        embed = discord.Embed(
+            title=f"❌ Stats Command",
+            description=f"Error getting stats for summoner {summoner_riot_id}. Make sure this user exists.",
+            color=discord.Color.green(),
         )
+        await ctx.send(embed=embed)
+
+
+# Displays a summoner's formatted monthly stats
+@stats.command(name="monthly")
+async def monthly(ctx, *, summoner_riot_id: str):
+    await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
+
+    # Make sure riot id exists
+    puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
+
+    if puuid:
+        stats = await lol_api.fetch_summoner_stats_by_day_range(puuid, range=30)
+        embed = discord.Embed(
+            title=f"📈 Summoner {summoner_riot_id}'s stats for the past 30 day(s).",
+            description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past 30 day(s).",
+            color=discord.Color.green(),
+        )
+        for key, value in stats.items():
+            embed.add_field(name=f"✅ {key}", value=value)
+
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title=f"❌ Stats Command",
+            description=f"Error getting stats for summoner {summoner_riot_id}. Make sure this user exists.",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=embed)
 
 
 # Displays discord server's formatted overall stats for all summoners
@@ -185,9 +243,13 @@ async def weekly_report(ctx):
 
         await ctx.send(embed=embed)
     else:
-        await ctx.send(
-            f"**Error fetching weekly report. Make sure you have added summoners to your server with !add_summoner 'Name #Tag'**"
+        embed = discord.Embed(
+            title=f"❌ Weekly Report Command",
+            description=f"Error fetching weekly report. Make sure you have added summoners to your server with !summoner add Name #Tag",
+            color=discord.Color.green(),
         )
+
+        await ctx.send(embed=embed)
 
 
 # Automatic task that fetches and displays a weekly report every Sunday at 8:00 pm
