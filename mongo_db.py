@@ -186,7 +186,7 @@ async def fetch_match_data_by_day_range(summoner_puuid, range=7):
 # Fetch weekly report of stats for all summoners in a discord server within certain range
 # The report will display which summoner has the highest value for each stat
 async def fetch_report_by_day_range(guild_id, range=7):
-    print(f"Fetching weekly report for guild with id {guild_id}")
+    print(f"Fetching {range} day report for guild with id {guild_id}")
 
     guild_data = db.discord_servers.find_one({"guild_id": guild_id})
     if guild_data:
