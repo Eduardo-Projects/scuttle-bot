@@ -48,20 +48,32 @@ async def add_summoner(ctx, summoner_riot_id: str):
         return
 
     guild_id = ctx.guild.id
+    guild_name = ctx.guild.name
     summoner_added = await mongo_db.add_summoner(summoner_riot_id, guild_id)
 
     if summoner_added:
         await ctx.send(f"Summoner {summoner_riot_id} added.")
+        embed = discord.Embed(
+            title=f"✅ Summoner Add Command",
+            description=f"{summoner_riot_id} was successfully added to {guild_name}",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=embed)
     else:
-        await ctx.send(f"Failed to add summoner {summoner_riot_id}.")
+        embed = discord.Embed(
+            title=f"❌ Summoner Add Command",
+            description=f"Failed to add {summoner_riot_id} to {guild_name}",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=embed)
 
 
 # Displays a list of all summoners for given discord server
 @bot.command(
-    name="show_summoners",
+    name="summoners",
     help="Displays a list of all summoners for given discord server",
 )
-async def show_summoners(ctx):
+async def summoners(ctx):
     # Ensure the command is being called from a discord server
     if ctx.guild is None:
         await ctx.send("This command must be used in a server.")
@@ -72,12 +84,22 @@ async def show_summoners(ctx):
     summoners = await mongo_db.get_summoners(guild_id)
 
     if summoners:
-        formatted_output = ", ".join([summoner["name"] for summoner in summoners])
-        await ctx.send(f"{guild_name}'s Summoners: {formatted_output}")
-    else:
-        await ctx.send(
-            f"{guild_name} does not have any summoners. Add summoners by typing !add_summoner 'RiotName #Tag'"
+        embed = discord.Embed(
+            title=f"🎮 {guild_name}'s Summoners",
+            description=f"This is a list of all the summoners added to this guild.",
+            color=discord.Color.green(),
         )
+        for summoner in summoners:
+            embed.add_field(name="", value=f"🟢 {summoner["name"]}")
+
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title=f"❌ Summoners",
+            description=f"{guild_name} does not have any summoners. Add summoners by typing !add_summoner 'RiotName #Tag'",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=embed)
 
 
 # Displays a summoner's formatted weekly stats
@@ -92,14 +114,15 @@ async def stats_weekly(ctx, summoner_riot_id: str):
 
     if puuid:
         stats = await lol_api.fetch_summoner_stats_by_day_range(puuid, range=7)
-        formatted_stats_data = "\n".join(
-            [f"{key}: {value}" for key, value in stats.items()]
+        embed = discord.Embed(
+            title=f"📈 Summoner {summoner_riot_id}'s stats for the past 7 days.",
+            description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past 7 days.",
+            color=discord.Color.green(),
         )
-        formatted_stats_data = "\n>>> {}".format(formatted_stats_data)
+        for key, value in stats.items():
+            embed.add_field(name=f"✅ {key}", value=value)
 
-        await ctx.send(
-            f"**Summoner {summoner_riot_id}'s stats for the past 7 days.** {formatted_stats_data}"
-        )
+        await ctx.send(embed=embed)
     else:
         await ctx.send(
             f"Error getting data for summoner **{summoner_riot_id}**. Make sure this user exists."
@@ -128,16 +151,19 @@ async def weekly_report(ctx):
     if stats:
         summoners = await mongo_db.get_summoners(guild_id)
         summoners_names = [summoner["name"] for summoner in summoners]
-        summoners_names_formatted = ", ".join(summoners_names)
-        formatted_stats_data = [
-            f"{item['Key']}:\n{item['Name']} - {item['Max Value']}\n" for item in stats
-        ]
-        formatted_stats_data = "\n".join(formatted_stats_data)
-        formatted_stats_output = "\n>>> {}".format(formatted_stats_data)
-
-        await ctx.send(
-            f"**Weekly Report. Summoners analyzed: {summoners_names_formatted}** {formatted_stats_output}"
+        embed = discord.Embed(
+            title=f"📈 Server {guild_name}'s stats for the past 7 days.",
+            description=f"This is a general overview showing which summoner had the highest value for each stat in the past 7 days for Ranked Solo Queue.",
+            color=discord.Color.green(),
         )
+        for stat in stats:
+            embed.add_field(name=f"✅ {stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
+            
+        embed.add_field(name="🏆 Summoners Compared:", value="", inline=False)  # Use '\u200b' to create a blank field
+        for name in summoners_names:
+            embed.add_field(name="", value=name, inline=True)
+
+        await ctx.send(embed=embed)
     else:
         await ctx.send(
             f"**Error fetching weekly report. Make sure you have added summoners to your server with !add_summoner 'Name #Tag'**"
@@ -205,14 +231,25 @@ async def set_main_channel(ctx):
 
     guild_id = ctx.guild.id
     channel_id = ctx.channel.id
+    channel_name = ctx.channel.name
     main_channel_changed = await mongo_db.set_main_channel(guild_id, channel_id)
 
     if main_channel_changed:
-        await ctx.send("\nMain channel set.")
-    else:
-        await ctx.send(
-            "\nFailed to set main channel. Make sure this is not already the main channel."
+        embed = discord.Embed(
+            title=f"✅ Set Main Channel Command",
+            description=f"Main channel set to {channel_name}",
+            color=discord.Color.green(),
         )
+
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title=f"❌ Set Main Channel Command",
+            description=f"{channel_name} is already the main channel.",
+            color=discord.Color.green(),
+        )
+
+        await ctx.send(embed=embed)
 
 
 # Periodically retrieves the match data for all summoners on all servers and stores it in database
