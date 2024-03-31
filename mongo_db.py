@@ -173,7 +173,7 @@ async def fetch_match_data_by_day_range(summoner_puuid, range=7):
             return matches_within_range
         else:
             print(
-                f"Summoenr {summoner_puuid} does not gave any match data in the database."
+                f"Summoner {summoner_puuid} does not gave any match data in the database."
             )
     else:
         print(
