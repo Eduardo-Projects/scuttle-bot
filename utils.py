@@ -39,10 +39,12 @@ def calculate_stats(summoner_puuid, matches_data):
             data["Average Gold Per Minute"] += challenges.get("goldPerMinute", 0)
             data["Average KDA"] += challenges.get("kda", 0)
             data["Average Kill Participation"] += challenges.get("killParticipation", 0)
-            data["Average Team Damage Percentage"] += stats["challenges"][
-                "teamDamagePercentage"
-            ]
-            data["Average Damage To Champions"] += stats["totalDamageDealtToChampions"]
+            data["Average Team Damage Percentage"] += challenges.get(
+                "teamDamagePercentage", 0
+            )
+            data["Average Damage To Champions"] += stats.get(
+                "totalDamageDealtToChampions", 0
+            )
 
         # calculate averages
         data = {
