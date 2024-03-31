@@ -28,7 +28,6 @@ async def on_ready():
     fetch_all_summoner_match_data.start()
     print("Started automatic summoner match data fetch job.")
 
-
 # Runs when bot is added to new discord server
 # Adds discord server data to database
 @bot.event
@@ -36,43 +35,8 @@ async def on_guild_join(guild):
     print(f"Joined new guild: {guild.name} with Guild ID: {guild.id} ")
     await mongo_db.add_guild(guild.name, guild.id)
 
-
-# Adds riot id and puuid to summoners list of the corresponding discord server in database
-@bot.command(
-    name="add_summoner", help="Adds a League of Legends summoner name to track."
-)
-async def add_summoner(ctx, summoner_riot_id: str):
-    # Ensure the command is being called from a discord server
-    if ctx.guild is None:
-        await ctx.send("This command must be used in a server.")
-        return
-
-    guild_id = ctx.guild.id
-    guild_name = ctx.guild.name
-    summoner_added = await mongo_db.add_summoner(summoner_riot_id, guild_id)
-
-    if summoner_added:
-        await ctx.send(f"Summoner {summoner_riot_id} added.")
-        embed = discord.Embed(
-            title=f"✅ Summoner Add Command",
-            description=f"{summoner_riot_id} was successfully added to {guild_name}",
-            color=discord.Color.green(),
-        )
-        await ctx.send(embed=embed)
-    else:
-        embed = discord.Embed(
-            title=f"❌ Summoner Add Command",
-            description=f"Failed to add {summoner_riot_id} to {guild_name}",
-            color=discord.Color.green(),
-        )
-        await ctx.send(embed=embed)
-
-
 # Displays a list of all summoners for given discord server
-@bot.command(
-    name="summoners",
-    help="Displays a list of all summoners for given discord server",
-)
+@bot.group(invoke_without_command=True)
 async def summoners(ctx):
     # Ensure the command is being called from a discord server
     if ctx.guild is None:
@@ -101,6 +65,33 @@ async def summoners(ctx):
         )
         await ctx.send(embed=embed)
 
+# Adds riot id and puuid to summoners list of the corresponding discord server in database
+@summoners.command(name="add", help="Adds a League of Legends summoner name to track.")
+async def summoners_add(ctx, summoner_riot_id: str):
+    # Ensure the command is being called from a discord server
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
+
+    guild_id = ctx.guild.id
+    guild_name = ctx.guild.name
+    summoner_added = await mongo_db.add_summoner(summoner_riot_id, guild_id)
+
+    if summoner_added:
+        await ctx.send(f"Summoner {summoner_riot_id} added.")
+        embed = discord.Embed(
+            title=f"✅ Summoner Add Command",
+            description=f"{summoner_riot_id} was successfully added to {guild_name}",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=embed)
+    else:
+        embed = discord.Embed(
+            title=f"❌ Summoner Add Command",
+            description=f"Failed to add {summoner_riot_id} to {guild_name}",
+            color=discord.Color.green(),
+        )
+        await ctx.send(embed=embed)
 
 # Displays a summoner's formatted weekly stats
 @bot.command(
