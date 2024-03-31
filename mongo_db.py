@@ -3,7 +3,7 @@ from pymongo import MongoClient
 from dotenv import load_dotenv
 import lol_api
 import certifi
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 import utils
 
 # Load environment variables from .env file
@@ -109,106 +109,27 @@ async def get_main_channel(guild_id):
         print(f"Document with Guild ID {guild_id} not found")
 
 
-# Checks if user is registered in summoner_match_data collection
-# If not, creates a document for them
-async def handle_summoner_in_match_data_collection(summoner_puuid, summoner_name):
-    collection = db.summoner_match_data
-    # Attempt to find the document
-    document = collection.find_one({"puuid": summoner_puuid})
-
-    # Check if the document was found
-    if document:
-        print(f"Document found for summoner with puuid {summoner_puuid}")
-    else:
-        print("Document not found. Creating one...")
-        new_document = {
-            "name": summoner_name,
-            "puuid": summoner_puuid,
-        }
-        result = collection.insert_one(new_document)
-        print(
-            "New document created in summoner_match_data with _id:", result.inserted_id
-        )
-
-
-# Adds match data for specific summoner to db
-async def add_match_data(summoner_puuid, match_data):
-    match_id = match_data["metadata"]["matchId"]
-    collection = db.summoner_match_data
-
-    # Attempt to find the document corresponding to summoner first
-    document_exists = collection.find_one({"puuid": summoner_puuid}) is not None
-
-    if document_exists:
-        result = collection.update_one(
-            {"puuid": summoner_puuid},
-            {"$addToSet": {"matches_data": match_data}},
-        )
-
-        if result.modified_count > 0:
-            print(
-                f"Match with id {match_id} was added to summoner {summoner_puuid}'s match data"
-            )
-        else:
-            print(f"No update made. {summoner_puuid} already contains match {match_id}")
-    else:
-        print("Document does not exist, and no upsert was performed.")
-
-
-# Retrieves match data from db for given summoner id within specified time frame
-async def fetch_match_data_by_day_range(summoner_puuid, range=7):
-    start_time = datetime.now() - timedelta(days=range)
-    start_time_timestamp = int(start_time.timestamp() * 1000)
-
-    collection = db.summoner_match_data
-    summoner_document = collection.find_one({"puuid": summoner_puuid})
-    if summoner_document:
-        matches_data = summoner_document.get("matches_data", None)
-        if matches_data:
-            matches_within_range = [
-                match
-                for match in matches_data
-                if match["info"]["gameStartTimestamp"] >= start_time_timestamp
-            ]
-            return matches_within_range
-        else:
-            print(
-                f"Summoner {summoner_puuid} does not gave any match data in the database."
-            )
-    else:
-        print(
-            f"Summoner {summoner_puuid} does not have a document in the summoner_match_data collection."
-        )
-
-    return None
+# Fetches stats for all matches played in the last {range} days
+async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
+    matches_data = await fetch_all_summoner_match_data_by_range(summoner_puuid, range)
+    stats = utils.calculate_stats(summoner_puuid, matches_data)
+    return stats
 
 
 # Fetch weekly report of stats for all summoners in a discord server within certain range
 # The report will display which summoner has the highest value for each stat
 async def fetch_report_by_day_range(guild_id, range=7):
-    print(f"Fetching {range} day report for guild with id {guild_id}")
+    print(f"Fetching weekly report for guild with id {guild_id}...")
 
     guild_data = db.discord_servers.find_one({"guild_id": guild_id})
     if guild_data:
-        # if guild was added less than 1 week ago, fetch match data for past week
-        current_date = datetime.now()
-        date_added = guild_data["date_added"]
-        lower_range = current_date - timedelta(days=range)
-        was_added_within_range = lower_range <= date_added <= current_date
-
-        if was_added_within_range:
-            print(
-                f"Guild {guild_id} was added within the last {range} days. Retrieiving match data for past {range} days."
-            )
-            await lol_api.fetch_all_summoner_match_data_by_guild(guild_id, range)
-
         agg_stats = []
         summoners = await get_summoners(guild_id)
 
         if summoners:
             for summoner in summoners:
                 puuid = summoner["puuid"]
-                matches_data = await fetch_match_data_by_day_range(
+                matches_data = await fetch_all_summoner_match_data_by_range(
                     summoner_puuid=puuid, range=range
                 )
                 stats = utils.calculate_stats(
@@ -249,3 +170,32 @@ async def fetch_report_by_day_range(guild_id, range=7):
             return None
     else:
         print(f"Guild {guild_id} does not exist in the database")
+
+
+# Fetch all matches stored for summer within a certain range
+async def fetch_all_summoner_match_data_by_range(summoner_puuid, range=7):
+    print(f"Fetching all matches for {summoner_puuid} within the last {range} days")
+    collection = db.cached_match_data
+
+    now = datetime.now(timezone.utc)
+    lower_range = now - timedelta(days=range)
+    lower_range_epoch = int(lower_range.timestamp() * 1000)
+    print(lower_range_epoch)
+
+    collection.create_index([("summoner_puuid", 1)])
+    collection.create_index([("info.gameStartTimestamp", 1)])
+
+    query = {
+        "summoner_puuid": summoner_puuid,
+        "info.gameStartTimestamp": {"$gte": lower_range_epoch},
+    }
+
+    documents = collection.find(query)
+
+    if not documents:
+        print(
+            f"No summoner match data found for {summoner_puuid} within the last {range} days."
+        )
+        return None
+    else:
+        return list(documents)

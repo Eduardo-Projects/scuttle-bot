@@ -25,9 +25,6 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
-    fetch_all_summoner_match_data.start()
-    print("Started automatic summoner match data fetch job.")
-
 # Runs when bot is added to new discord server
 # Adds discord server data to database
 @bot.event
@@ -209,16 +206,6 @@ async def report_automatic():
                 print(f"Guild with id {guild_id} does not have a main channel set.")
 
 
-# Periodically retrieves the match data for all summoners on all servers and stores it in database
-@tasks.loop(minutes=1)
-async def fetch_all_summoner_match_data():
-    now = datetime.now()
-    # runs at every 4 hours on the our starting at 00:00
-    if now.hour % 4 == 0 and now.minute == 00:
-        all_guilds = bot.guilds
-        await lol_api.fetch_all_summoner_match_data(all_guilds, range=1)
-
-
 # Reusable function for getting stats data based on day range
 async def process_stats_by_day_range(ctx, summoner_riot_id, range):
     await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
@@ -227,7 +214,7 @@ async def process_stats_by_day_range(ctx, summoner_riot_id, range):
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
 
     if puuid:
-        stats = await lol_api.fetch_summoner_stats_by_day_range(puuid, range=range)
+        stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
         embed = discord.Embed(
             title=f"📈 Summoner {summoner_riot_id}'s stats for the past {range} day(s).",
             description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past {range} day(s).",
