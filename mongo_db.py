@@ -183,9 +183,9 @@ async def fetch_match_data_by_day_range(summoner_puuid, range=7):
     return None
 
 
-# Fetch weekly report of stats for all summoners in a discord server
+# Fetch weekly report of stats for all summoners in a discord server within certain range
 # The report will display which summoner has the highest value for each stat
-async def fetch_weekly_report(guild_id):
+async def fetch_report_by_day_range(guild_id, range=7):
     print(f"Fetching weekly report for guild with id {guild_id}")
 
     guild_data = db.discord_servers.find_one({"guild_id": guild_id})
@@ -193,14 +193,14 @@ async def fetch_weekly_report(guild_id):
         # if guild was added less than 1 week ago, fetch match data for past week
         current_date = datetime.now()
         date_added = guild_data["date_added"]
-        seven_days_ago = current_date - timedelta(days=7)
-        was_added_within_past_week = seven_days_ago <= date_added <= current_date
+        lower_range = current_date - timedelta(days=range)
+        was_added_within_range = lower_range <= date_added <= current_date
 
-        if was_added_within_past_week:
+        if was_added_within_range:
             print(
-                f"Guild {guild_id} was added within the past week. Retrieiving match data for past 7 days."
+                f"Guild {guild_id} was added within the last {range} days. Retrieiving match data for past {range} days."
             )
-            await lol_api.fetch_all_summoner_match_data_by_guild(guild_id, range=7)
+            await lol_api.fetch_all_summoner_match_data_by_guild(guild_id, range)
 
         agg_stats = []
         summoners = await get_summoners(guild_id)
@@ -209,7 +209,7 @@ async def fetch_weekly_report(guild_id):
             for summoner in summoners:
                 puuid = summoner["puuid"]
                 matches_data = await fetch_match_data_by_day_range(
-                    summoner_puuid=puuid, range=7
+                    summoner_puuid=puuid, range=range
                 )
                 stats = utils.calculate_stats(
                     summoner_puuid=puuid, matches_data=matches_data
