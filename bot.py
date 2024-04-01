@@ -11,8 +11,8 @@ load_dotenv()
 
 # Define intents
 intents = discord.Intents.all()
-intents.messages = True  # If your bot needs to receive messages
-intents.guilds = True  # If your bot needs to work with guild (server) information
+intents.messages = True
+intents.guilds = True
 
 bot = commands.Bot(command_prefix="!", intents=intents)
 
@@ -60,7 +60,7 @@ async def help(ctx):
 
     await ctx.send(embed=embed)
 
-# Sets the text channel where automatic messages will be sent, such as weekly reports
+# Sets the text channel where automatic messages will be sent, such as reports
 @bot.command(name="enable")
 async def enable(ctx):
     # Ensure the command is being called from a discord server
@@ -90,7 +90,7 @@ async def enable(ctx):
         await ctx.send(embed=embed)
 
 
-# Displays a list of all summoners for given discord server
+# Displays a list of all summoners for given Guild (discord server)
 @bot.group(invoke_without_command=True)
 async def summoners(ctx):
     # Ensure the command is being called from a discord server
@@ -121,7 +121,7 @@ async def summoners(ctx):
         await ctx.send(embed=embed)
 
 
-# Adds riot id and puuid to summoners list of the corresponding discord server in database
+# Adds a summoner to a Guild
 @summoners.command(name="add")
 async def summoners_add(ctx, *, summoner_riot_id: str):
     # Ensure the command is being called from a discord server
@@ -150,36 +150,39 @@ async def summoners_add(ctx, *, summoner_riot_id: str):
         await ctx.send(embed=embed)
 
 
-# Displays a summoner's formatted daily stats
+# Displays a summoner's formatted daily solo queue stats
 @bot.group(invoke_without_command=True)
 async def stats(ctx, *, summoner_riot_id: str):
     await process_stats_by_day_range(ctx, summoner_riot_id, range=1)
 
-# Displays a summoner's formatted weekly stats
+# Displays a summoner's formatted weekly solo queue stats
 @stats.command(name="weekly")
 async def stats_weekly(ctx, *, summoner_riot_id: str):
     await process_stats_by_day_range(ctx, summoner_riot_id, range=7)
 
 
-# Displays a summoner's formatted monthly stats
+# Displays a summoner's formatted monthly solo queue stats
 @stats.command(name="monthly")
 async def stats_monthly(ctx, *, summoner_riot_id: str):
     await process_stats_by_day_range(ctx, summoner_riot_id, range=30)
 
 
-# Displays discord server's formatted overall stats for all summoners for the past week
+# Displays a Guild's formatted overall stats for all summoners for the past week
+# Only displays max value for each stat
 @bot.group(invoke_without_command=True)
 async def report(ctx):
     await process_report_by_day_range(ctx=ctx, range=7)
 
 
-# Displays discord server's formatted overall stats for all summoners for the past month
+# Displays a Guild's formatted overall stats for all summoners for the past month
+# Only displays max value for each stat
 @report.command(name="monthly")
 async def report_monthly(ctx):
     await process_report_by_day_range(ctx=ctx, range=30)
 
 
-# Automatic task that fetches and displays a weekly report every Sunday at 8:00 pm
+# Automatic task that fetches and displays a 7 day report every Sunday at 8:00 pm EST
+# Report is sent to every Guild
 @tasks.loop(minutes=1)
 async def report_automatic():
     now = datetime.now()
@@ -233,7 +236,7 @@ async def report_automatic():
                 print(f"Guild with id {guild_id} does not have a main channel set.")
 
 
-# Reusable function for getting stats data based on day range
+# Reusable function for fetching and displaying summoner stats based on day range
 async def process_stats_by_day_range(ctx, summoner_riot_id, range):
     # Ensure the command is being called from a discord server
     if ctx.guild is None:
@@ -282,7 +285,7 @@ async def process_stats_by_day_range(ctx, summoner_riot_id, range):
         await ctx.send(embed=embed)
 
 
-# Resuable function for getting report data based on day range
+# Resuable function for fetching and displaying report data based on day range
 async def process_report_by_day_range(ctx, range):
     # Ensure the command is being called from a discord server
     if ctx.guild is None:

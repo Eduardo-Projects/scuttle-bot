@@ -15,7 +15,7 @@ client = MongoClient(os.getenv("MONGO_DB_URI"), tlsCAFile=ca)
 db = client["league_discord_bot"]
 
 
-# Adds riot id and puuid to summoners list of the corresponding discord server in database
+# Adds a summoner to a Guild
 async def add_summoner(summoner_riot_id, guild_id):
     # check if riot user exists before inserting into db
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
@@ -42,7 +42,7 @@ async def add_summoner(summoner_riot_id, guild_id):
     return False
 
 
-# Retrieves a list of all summoners for given discord server
+# Returns a list of all summoners within a Guild (discord server)
 async def get_summoners(guild_id):
     collection = db.discord_servers
     document = collection.find_one({"guild_id": guild_id})
@@ -54,7 +54,7 @@ async def get_summoners(guild_id):
     return None
 
 
-# Creates and inserts a new discord server in database
+# Creates and inserts a new Guild in database
 async def add_guild(guild_name, guild_id):
     collection = db.discord_servers
 
@@ -98,7 +98,7 @@ async def set_main_channel(guild_id, channel_id):
     return False
 
 
-# Retrieves the main_channel_id for a specific discord server
+# Returns the main_channel_id for a Guild
 async def get_main_channel(guild_id):
     collection = db.discord_servers
     document = collection.find_one({"guild_id": guild_id})
@@ -110,7 +110,7 @@ async def get_main_channel(guild_id):
         print(f"Document with Guild ID {guild_id} not found")
 
 
-# Fetches stats for all matches played in the last {range} days
+# Fetches a summoner's stats for all matches played in the last {range} days
 async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
     print(f"\nFetching {range} day stats for {summoner_puuid}...")
     matches_data = await fetch_all_summoner_match_data_by_range(summoner_puuid, range)
@@ -118,7 +118,7 @@ async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
     return stats
 
 
-# Fetch weekly report of stats for all summoners in a discord server within certain range
+# Fetches weekly report for a Guild within certain range
 # The report will display which summoner has the highest value for each stat
 async def fetch_report_by_day_range(guild_id, range=7):
     print(f"\nFetching {range} day report for guild with id {guild_id}...")
@@ -174,7 +174,7 @@ async def fetch_report_by_day_range(guild_id, range=7):
         print(f"Guild {guild_id} does not exist in the database")
 
 
-# Fetch all matches stored for summer within a certain range
+# Fetches all matches stored in database for summoner within a range
 async def fetch_all_summoner_match_data_by_range(summoner_puuid, range=7):
     print(f"Fetching all matches for {summoner_puuid} within the last {range} days")
     collection = db.cached_match_data

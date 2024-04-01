@@ -10,7 +10,8 @@ import mongo_db
 # Load environment variables from .env file
 load_dotenv()
 
-# Handler function for all calls made to riot api
+# Handler function for all API calls made
+# Contains error handling and backup rate limit handling
 async def handle_api_call(url):
     async with aiohttp.ClientSession() as session:
         try:
@@ -28,6 +29,8 @@ async def handle_api_call(url):
             return None
 
 
+# Fetches a summoner's puuid from their riot id
+# Checks if riot id is in proper format
 async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
     is_proper_format = check_riot_id_format(summoner_riot_id)
 
