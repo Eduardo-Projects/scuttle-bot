@@ -25,6 +25,7 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
+
 # Runs when bot is added to new discord server
 # Adds discord server data to database
 @bot.event
@@ -32,6 +33,32 @@ async def on_guild_join(guild):
     print(f"Joined new guild: {guild.name} with Guild ID: {guild.id} ")
     await mongo_db.add_guild(guild.name, guild.id)
 
+# Remove the default help command
+bot.remove_command('help')
+
+# Custom help command
+@bot.command(name='help')
+async def help(ctx):
+    embed = discord.Embed(title="🪴 Scuttle is brough to you by Eduardo Alba", description="I am a bot that provides quick and detailed **League of Legends** statistics.", color=discord.Color.green())
+
+    # Assuming you have a few commands in your bot; replace these with your actual commands
+    commands = {
+        '✅ !enable': 'Sets the main channel to where the bot will send automated messages',
+        '📈 !stats {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `!stats Username #NA1`",
+        '📈 !stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `!stats weekly Username #NA1`",
+        '📈 !stats monthly {RIOT ID}}': "Displays monthly stats for Riot ID specified\nExample: `!stats monthly Username #NA1`",
+        '💼 !report': "Displays weekly stat comparison for all summoners in your Guild",
+        '💼 !report monthly': "Displays monthly stat comparison for all summoners in your Guild",
+        '🎮 !summoners': "Displays all summoners in your Guild",
+        '🎮 !summoners add {RIOT ID}': "Adds a summoner to your Guild\nExample: `!summoners add Username #NA1`"
+    }
+
+    for command, description in commands.items():
+        embed.add_field(name=command, value=description, inline=False)
+
+    embed.set_footer(text="📝 Note: match data is updated hourly. If you add a new summoner to your Guild, expect to see stats within 1-2 hours.")
+
+    await ctx.send(embed=embed)
 
 # Sets the text channel where automatic messages will be sent, such as weekly reports
 @bot.command(name="enable")
@@ -82,7 +109,7 @@ async def summoners(ctx):
             color=discord.Color.green(),
         )
         for summoner in summoners:
-            embed.add_field(name="", value=f"🟢 {summoner["name"]}")
+            embed.add_field(name="", value=f"🟢 {summoner["name"]}", inline=False)
 
         await ctx.send(embed=embed)
     else:
@@ -208,22 +235,44 @@ async def report_automatic():
 
 # Reusable function for getting stats data based on day range
 async def process_stats_by_day_range(ctx, summoner_riot_id, range):
+    # Ensure the command is being called from a discord server
+    if ctx.guild is None:
+        await ctx.send("This command must be used in a server.")
+        return
+
+    guild_name = ctx.guild.name
+    guild_id = ctx.guild.id
+
     await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
 
     # Make sure riot id exists
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
 
     if puuid:
-        stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
-        embed = discord.Embed(
-            title=f"📈 Summoner {summoner_riot_id}'s stats for the past {range} day(s).",
-            description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past {range} day(s).",
-            color=discord.Color.green(),
-        )
-        for key, value in stats.items():
-            embed.add_field(name=f"✅ {key}", value=value)
+        summoners_in_guild = await mongo_db.get_summoners(guild_id)
+        is_summoner_in_guild = any(summoner['puuid'] == puuid for summoner in summoners_in_guild)
 
-        await ctx.send(embed=embed)
+        if not is_summoner_in_guild:
+            embed = discord.Embed(
+                title=f"❌ Summoner {summoner_riot_id} is not part of your guild.",
+                description=f"",
+                color=discord.Color.green(),
+            )
+            embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `!summoners add {summoner_riot_id}`.", inline=True)
+            embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `!summoners`.", inline=True)
+            embed.set_footer(text="📝 Note: match data is updated hourly. If you are adding a new summoner, expect to see stats within 1-2 hours.")
+            await ctx.send(embed=embed)
+        else:
+            stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
+            embed = discord.Embed(
+                title=f"📈 Summoner {summoner_riot_id}'s stats for the past {range} day(s).",
+                description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past {range} day(s).",
+                color=discord.Color.green(),
+            )
+            for key, value in stats.items():
+                embed.add_field(name=f"✅ {key}", value=value)
+
+            await ctx.send(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Stats Command",
