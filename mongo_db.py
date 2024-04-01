@@ -182,7 +182,6 @@ async def fetch_all_summoner_match_data_by_range(summoner_puuid, range=7):
     now = datetime.now(timezone.utc)
     lower_range = now - timedelta(days=range)
     lower_range_epoch = int(lower_range.timestamp() * 1000)
-    print(lower_range_epoch)
 
     collection.create_index([("summoner_puuid", 1)])
     collection.create_index([("info.gameStartTimestamp", 1)])
