@@ -39,7 +39,7 @@ bot.remove_command('help')
 # Custom help command
 @bot.command(name='help')
 async def help(ctx):
-    embed = discord.Embed(title="🪴 Scuttle is brough to you by Eduardo Alba", description="I am a bot that provides quick and detailed **League of Legends** statistics.", color=discord.Color.green())
+    embed = discord.Embed(title="🪴 Scuttle is brought to you by Eduardo Alba", description="I am a bot that provides quick and detailed **League of Legends** statistics.", color=discord.Color.green())
 
     # Assuming you have a few commands in your bot; replace these with your actual commands
     commands = {
