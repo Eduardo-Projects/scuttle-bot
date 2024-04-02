@@ -307,6 +307,8 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
             for key, value in stats.items():
                 embed.add_field(name=f"✅ {key}", value=value)
 
+            embed.set_footer(text="📝 Note: match data is updated hourly. If you add a new summoner to your Guild, expect to see stats within 1-2 hours.")
+
             await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(
@@ -349,6 +351,7 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
         for name in summoners_names:
             summoners_embed.add_field(name="", value=name, inline=True)
 
+        embed.set_footer(text="📝 Note: match data is updated hourly. If you add a new summoner to your Guild, expect to see stats within 1-2 hours.")
 
         await interaction.response.send_message(embeds=[embed, summoners_embed])
     else:
