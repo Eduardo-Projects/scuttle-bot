@@ -30,7 +30,7 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
-    await bot.tree.sync(guild=discord.Object(id=1222997857464745994))
+    await bot.tree.sync()
 
 @bot.event
 async def on_guild_join(guild):
