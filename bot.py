@@ -60,7 +60,7 @@ async def help(interaction:discord.Interaction):
     for command, description in commands.items():
         embed.add_field(name=command, value=description, inline=False)
 
-    embed.set_footer(text="📝 Note: match data is updated hourly. If you add a new summoner to your Guild, expect to see stats within 1-2 hours.")
+    embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
 
     await interaction.response.send_message(embed=embed)
 
@@ -295,7 +295,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
             )
             embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id}`.", inline=True)
             embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners`.", inline=True)
-            embed.set_footer(text="📝 Note: match data is updated hourly. If you are adding a new summoner, expect to see stats within 1-2 hours.")
+            embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
             await interaction.response.send_message(embed=embed)
         else:
             stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
@@ -307,7 +307,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
             for key, value in stats.items():
                 embed.add_field(name=f"✅ {key}", value=value)
 
-            embed.set_footer(text="📝 Note: match data is updated hourly. If you add a new summoner to your Guild, expect to see stats within 1-2 hours.")
+            embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
 
             await interaction.response.send_message(embed=embed)
     else:
@@ -351,7 +351,7 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
         for name in summoners_names:
             summoners_embed.add_field(name="", value=name, inline=True)
 
-        embed.set_footer(text="📝 Note: match data is updated hourly. If you add a new summoner to your Guild, expect to see stats within 1-2 hours.")
+        embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
 
         await interaction.response.send_message(embeds=[embed, summoners_embed])
     else:
