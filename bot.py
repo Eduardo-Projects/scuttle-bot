@@ -5,6 +5,7 @@ import lol_api
 import os
 from dotenv import load_dotenv
 from datetime import datetime
+from discord.ext.commands import AutoShardedBot
 
 # Load environment variables from .env file
 load_dotenv()
@@ -14,7 +15,7 @@ intents = discord.Intents.all()
 intents.messages = True
 intents.guilds = True
 
-bot = commands.Bot(command_prefix="!", intents=intents)
+bot = AutoShardedBot(command_prefix="!", intents=intents)
 
 
 # Event that runs only when bot first starts up
