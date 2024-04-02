@@ -6,6 +6,8 @@ import os
 from dotenv import load_dotenv
 from datetime import datetime
 from discord.ext.commands import AutoShardedBot
+from discord import app_commands
+from typing import Literal, Optional
 
 # Load environment variables from .env file
 load_dotenv()
@@ -15,10 +17,12 @@ intents = discord.Intents.all()
 intents.messages = True
 intents.guilds = True
 
-bot = AutoShardedBot(command_prefix="!", intents=intents)
+bot = commands.Bot(command_prefix="/", intents=intents)
 
 
-# Event that runs only when bot first starts up
+# EVENTS
+
+
 @bot.event
 async def on_ready():
     print(f"{bot.user.name} has connected to Discord!")
@@ -26,32 +30,31 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
+    await bot.tree.sync(guild=discord.Object(id=1222997857464745994))
 
-# Runs when bot is added to new discord server
-# Adds discord server data to database
 @bot.event
 async def on_guild_join(guild):
     print(f"Joined new guild: {guild.name} with Guild ID: {guild.id} ")
     await mongo_db.add_guild(guild.name, guild.id)
 
-# Remove the default help command
-bot.remove_command('help')
 
-# Custom help command
-@bot.command(name='help')
-async def help(ctx):
+# BASIC COMMANDS
+
+
+bot.remove_command('help')
+@bot.tree.command(name="help",description="Shows list of commands.")
+async def help(interaction:discord.Interaction):
     embed = discord.Embed(title="🪴 Scuttle is brought to you by Eduardo Alba", description="I am a bot that provides quick and detailed **League of Legends** statistics.", color=discord.Color.green())
 
-    # Assuming you have a few commands in your bot; replace these with your actual commands
     commands = {
-        '✅ !enable': 'Sets the main channel to where the bot will send automated messages',
-        '📈 !stats {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `!stats Username #NA1`",
-        '📈 !stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `!stats weekly Username #NA1`",
-        '📈 !stats monthly {RIOT ID}}': "Displays monthly stats for Riot ID specified\nExample: `!stats monthly Username #NA1`",
-        '💼 !report': "Displays weekly stat comparison for all summoners in your Guild",
-        '💼 !report monthly': "Displays monthly stat comparison for all summoners in your Guild",
-        '🎮 !summoners': "Displays all summoners in your Guild",
-        '🎮 !summoners add {RIOT ID}': "Adds a summoner to your Guild\nExample: `!summoners add Username #NA1`"
+        '✅ /enable': 'Sets the main channel to where the bot will send automated messages',
+        '📈 /stats daily {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `/stats Username #NA1`",
+        '📈 /stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `/stats weekly Username #NA1`",
+        '📈 /stats monthly {RIOT ID}}': "Displays monthly stats for Riot ID specified\nExample: `/stats monthly Username #NA1`",
+        '💼 /report weekly': "Displays weekly stat comparison for all summoners in your Guild",
+        '💼 /report monthly': "Displays monthly stat comparison for all summoners in your Guild",
+        '🎮 /summoners list': "Displays all summoners in your Guild",
+        '🎮 /summoners add {RIOT ID}': "Adds a summoner to your Guild\nExample: `/summoners add Username #NA1`"
     }
 
     for command, description in commands.items():
@@ -59,18 +62,18 @@ async def help(ctx):
 
     embed.set_footer(text="📝 Note: match data is updated hourly. If you add a new summoner to your Guild, expect to see stats within 1-2 hours.")
 
-    await ctx.send(embed=embed)
+    await interaction.response.send_message(embed=embed)
 
-# Sets the text channel where automatic messages will be sent, such as reports
-@bot.command(name="enable")
-async def enable(ctx):
+
+@bot.tree.command(name="enable", description="Sets the text channel where automatic messages will be sent, such as reports.")
+async def enable(interaction: discord.Interaction):
     # Ensure the command is being called from a discord server
-    if ctx.guild is None:
-        await ctx.send("This command must be used in a server.")
+    if interaction.guild_id is None:
+        await interaction.response.send_message("This command must be used in a server.")
         return
 
-    guild_id = ctx.guild.id
-    channel_id = ctx.channel.id
+    guild_id = interaction.guild_id
+    channel_id = interaction.channel_id
     main_channel_changed = await mongo_db.set_main_channel(guild_id, channel_id)
 
     if main_channel_changed:
@@ -79,28 +82,32 @@ async def enable(ctx):
             description=f"Scuttle enabled on this channel",
             color=discord.Color.green(),
         )
-
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Enable Command",
             description=f"Scuttle is already enabled on this channel.",
             color=discord.Color.green(),
         )
+        await interaction.response.send_message(embed=embed)
 
-        await ctx.send(embed=embed)
+
+# SUMMONERS COMMANDS
 
 
-# Displays a list of all summoners for given Guild (discord server)
-@bot.group(invoke_without_command=True)
-async def summoners(ctx):
+summoners_group = app_commands.Group(name="summoners", description="Commands related to summoners")
+bot.tree.add_command(summoners_group)
+
+
+@summoners_group.command(name="list", description="Displays a list of all summoners in your Guild.")
+async def summoners(interaction: discord.Interaction):
     # Ensure the command is being called from a discord server
-    if ctx.guild is None:
-        await ctx.send("This command must be used in a server.")
+    if interaction.guild_id is None:
+        await interaction.response.send_message("This command must be used in a server.")
         return
 
-    guild_name = ctx.guild.name
-    guild_id = ctx.guild.id
+    guild_name = interaction.guild
+    guild_id = interaction.guild_id
     summoners = await mongo_db.get_summoners(guild_id)
 
     if summoners:
@@ -112,78 +119,102 @@ async def summoners(ctx):
         for summoner in summoners:
             embed.add_field(name="", value=f"🟢 {summoner["name"]}", inline=False)
 
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Summoners",
-            description=f"{guild_name} does not have any summoners. Add summoners by typing !add_summoner 'RiotName #Tag'",
+            description=f"{guild_name} does not have any summoners. Add summoners by typing /add_summoner RiotName #Tag",
             color=discord.Color.green(),
         )
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
 
-# Adds a summoner to a Guild
-@summoners.command(name="add")
-async def summoners_add(ctx, *, summoner_riot_id: str):
+@summoners_group.command(name="add", description="Adds a summoner to your Guild.")
+@app_commands.describe(
+    summoner_name="The name of the summoner",
+    tag="Riot Tag"
+)
+async def summoners_add(interaction: discord.Interaction, summoner_name: str, tag: str):
     # Ensure the command is being called from a discord server
-    if ctx.guild is None:
-        await ctx.send("This command must be used in a server.")
+    if interaction.guild_id is None:
+        await interaction.response.send_message("This command must be used in a server.")
         return
 
-    guild_id = ctx.guild.id
-    guild_name = ctx.guild.name
+    guild_id = interaction.guild_id
+    guild_name = interaction.guild
+    summoner_riot_id = f"{summoner_name} {tag}"
     summoner_added = await mongo_db.add_summoner(summoner_riot_id, guild_id)
 
     if summoner_added:
-        await ctx.send(f"Summoner {summoner_riot_id} added.")
         embed = discord.Embed(
             title=f"✅ Summoner Add Command",
             description=f"{summoner_riot_id} was successfully added to {guild_name}",
             color=discord.Color.green(),
         )
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Summoner Add Command",
             description=f"Failed to add {summoner_riot_id} to {guild_name}",
             color=discord.Color.green(),
         )
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
 
-# Displays a summoner's formatted daily solo queue stats
-@bot.group(invoke_without_command=True)
-async def stats(ctx, *, summoner_riot_id: str):
-    await process_stats_by_day_range(ctx, summoner_riot_id, range=1)
-
-# Displays a summoner's formatted weekly solo queue stats
-@stats.command(name="weekly")
-async def stats_weekly(ctx, *, summoner_riot_id: str):
-    await process_stats_by_day_range(ctx, summoner_riot_id, range=7)
+# STATS COMMANDS
 
 
-# Displays a summoner's formatted monthly solo queue stats
-@stats.command(name="monthly")
-async def stats_monthly(ctx, *, summoner_riot_id: str):
-    await process_stats_by_day_range(ctx, summoner_riot_id, range=30)
+stats_group = app_commands.Group(name="stats", description="Commands related to stats")
+bot.tree.add_command(stats_group)
 
 
-# Displays a Guild's formatted overall stats for all summoners for the past week
-# Only displays max value for each stat
-@bot.group(invoke_without_command=True)
-async def report(ctx):
-    await process_report_by_day_range(ctx=ctx, range=7)
+@stats_group.command(name="daily", description="Displays a summoner's collective stats for games played in the last 24 hours.")
+@app_commands.describe(
+    summoner_name="The name of the summoner",
+    tag="Riot Tag"
+)
+async def stats(interaction: discord.Interaction, summoner_name: str, tag:str):
+    summoner_riot_id = f"{summoner_name} {tag}"
+    await process_stats_by_day_range(interaction, summoner_riot_id, range=1)
 
 
-# Displays a Guild's formatted overall stats for all summoners for the past month
-# Only displays max value for each stat
-@report.command(name="monthly")
-async def report_monthly(ctx):
-    await process_report_by_day_range(ctx=ctx, range=30)
+@stats_group.command(name="weekly", description="Displays a summoner's collective stats for games played in the last 7 Days.")
+@app_commands.describe(
+    summoner_name="The name of the summoner",
+    tag="Riot Tag"
+)
+async def stats_weekly(interaction: discord.Interaction, summoner_name: str, tag:str):
+    summoner_riot_id = f"{summoner_name} {tag}"
+    await process_stats_by_day_range(interaction, summoner_riot_id, range=7)
 
 
-# Automatic task that fetches and displays a 7 day report every Sunday at 8:00 pm EST
-# Report is sent to every Guild
+@stats_group.command(name="monthly", description="Displays a summoner's collective stats for games played in the last 30 Days.")
+@app_commands.describe(
+    summoner_name="The name of the summoner",
+    tag="Riot Tag"
+)
+async def stats_monthly(interaction: discord.Interaction, summoner_name: str, tag:str):
+    summoner_riot_id = f"{summoner_name} {tag}"
+    await process_stats_by_day_range(interaction, summoner_riot_id, range=30)
+
+
+# REPORT COMMANDS
+
+
+reports_group = app_commands.Group(name="reports", description="Commands related to reports")
+bot.tree.add_command(reports_group)
+
+
+@reports_group.command(name="weekly", description="Display a weekly report comparing the stats of all summoners in your Guild.")
+async def report(interaction: discord.Interaction):
+    await process_report_by_day_range(interaction, range=7)
+
+
+@reports_group.command(name="monthly", description="Display a monthly report comparing the stats of all summoners in your Guild.")
+async def report(interaction: discord.Interaction):
+    await process_report_by_day_range(interaction, range=30)
+
+
 @tasks.loop(minutes=1)
 async def report_automatic():
     now = datetime.now()
@@ -237,17 +268,17 @@ async def report_automatic():
                 print(f"Guild with id {guild_id} does not have a main channel set.")
 
 
-# Reusable function for fetching and displaying summoner stats based on day range
-async def process_stats_by_day_range(ctx, summoner_riot_id, range):
+# HELPER FUNCTIONS
+
+
+async def process_stats_by_day_range(interaction: discord.Interaction, summoner_riot_id, range):
     # Ensure the command is being called from a discord server
-    if ctx.guild is None:
-        await ctx.send("This command must be used in a server.")
+    if interaction.guild_id is None:
+        await interaction.response.send_message("This command must be used in a server.")
         return
 
-    guild_name = ctx.guild.name
-    guild_id = ctx.guild.id
-
-    await ctx.send(f"*Loading ranked solo queue stats for **{summoner_riot_id}** ...*")
+    guild_name = interaction.guild
+    guild_id = interaction.guild_id
 
     # Make sure riot id exists
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
@@ -262,10 +293,10 @@ async def process_stats_by_day_range(ctx, summoner_riot_id, range):
                 description=f"",
                 color=discord.Color.green(),
             )
-            embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `!summoners add {summoner_riot_id}`.", inline=True)
-            embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `!summoners`.", inline=True)
+            embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id}`.", inline=True)
+            embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners`.", inline=True)
             embed.set_footer(text="📝 Note: match data is updated hourly. If you are adding a new summoner, expect to see stats within 1-2 hours.")
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
         else:
             stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
             embed = discord.Embed(
@@ -276,29 +307,24 @@ async def process_stats_by_day_range(ctx, summoner_riot_id, range):
             for key, value in stats.items():
                 embed.add_field(name=f"✅ {key}", value=value)
 
-            await ctx.send(embed=embed)
+            await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Stats Command",
             description=f"Error getting stats for summoner {summoner_riot_id}. Make sure this user exists.",
             color=discord.Color.green(),
         )
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
 
 
-# Resuable function for fetching and displaying report data based on day range
-async def process_report_by_day_range(ctx, range):
+async def process_report_by_day_range(interaction: discord.Interaction, range):
     # Ensure the command is being called from a discord server
-    if ctx.guild is None:
-        await ctx.send("This command must be used in a server.")
+    if interaction.guild is None:
+        await interaction.response.send_message("This command must be used in a server.")
         return
 
-    guild_name = ctx.guild.name
-    guild_id = ctx.guild.id
-
-    await ctx.send(
-        f"*Loading {range} day report for **{guild_name}**, this may take a few minutes ...*"
-    )
+    guild_name = interaction.guild
+    guild_id = interaction.guild_id
 
     stats = await mongo_db.fetch_report_by_day_range(guild_id, range=range)
 
@@ -324,16 +350,16 @@ async def process_report_by_day_range(ctx, range):
             summoners_embed.add_field(name="", value=name, inline=True)
 
 
-        await ctx.send(embed=embed)
-        await ctx.send(embed=summoners_embed)
+        await interaction.response.send_message(embeds=[embed, summoners_embed])
     else:
         embed = discord.Embed(
-            title=f"❌ Weekly Report Command",
-            description=f"Error fetching weekly report. Make sure you have added summoners to your server with !summoner add Name #Tag",
+            title=f"❌ Reports Command",
+            description=f"Error fetching report. Make sure you have added summoners to your server with /summoner add Name #Tag",
             color=discord.Color.green(),
         )
 
-        await ctx.send(embed=embed)
+        await interaction.response.send_message(embed=embed)
+
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
