@@ -306,18 +306,26 @@ async def process_report_by_day_range(ctx, range):
         summoners = await mongo_db.get_summoners(guild_id)
         summoners_names = [summoner["name"] for summoner in summoners]
         embed = discord.Embed(
-            title=f"📈 Server {guild_name}'s stats for the past {range} days.",
+            title=f"📈 Server {guild_name}'s report for the past {range} days.",
             description=f"This is a general overview showing which summoner had the highest value for each stat in the past {range} days for Ranked Solo Queue.",
             color=discord.Color.green(),
         )
         for stat in stats:
             embed.add_field(name=f"✅ {stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
-            
-        embed.add_field(name="🏆 Summoners Compared:", value="", inline=False) 
+        
+
+        # Summoners
+        summoners_embed = discord.Embed(
+            title=f"🏆 Summoners Compared:",
+            description=f"This is a list of all the summoners in your Guild. Each of their stats have been compared.",
+            color=discord.Color.green(),
+        )
         for name in summoners_names:
-            embed.add_field(name="", value=name, inline=True)
+            summoners_embed.add_field(name="", value=name, inline=True)
+
 
         await ctx.send(embed=embed)
+        await ctx.send(embed=summoners_embed)
     else:
         embed = discord.Embed(
             title=f"❌ Weekly Report Command",
