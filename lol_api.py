@@ -14,12 +14,12 @@ regions = [
     "na1",
     "euw1",
     "kr",
-    "jp1"
+    "jp1",
     "br1",
     "eun1",
     "la1",
     "la2",
-    "oc1"
+    "oc1",
     "ph2",
     "ru",
     "sg2",

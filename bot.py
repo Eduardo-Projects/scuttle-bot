@@ -30,8 +30,8 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
-    guilds=bot.guilds
-    await mongo_db.update_summoner_region_all(guilds)
+    # guilds=bot.guilds
+    # await mongo_db.update_summoner_region_all(guilds)
 
     # test_guild = discord.Object(id=207292834678702080)
     # await bot.tree.sync(guild=test_guild)
