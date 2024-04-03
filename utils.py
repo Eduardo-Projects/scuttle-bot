@@ -24,9 +24,6 @@ def calculate_stats(summoner_puuid, matches_data):
     data = {key: 0 for key in data_keys}
 
     if matches_data:
-        print(
-            f"Calculating stats for summoner with puuid {summoner_puuid} for the last {len(matches_data)} matches"
-        )
         data["🎮 Total Matches"] = len(matches_data)
         for match in matches_data:
             participants = match["info"]["participants"]
@@ -68,7 +65,6 @@ def calculate_stats(summoner_puuid, matches_data):
         # Round values to 2 decimal places
         rounded_data = {key: round(value, 2) for key, value in data.items()}
 
-        print(f"Finished calculating stats.")
         return rounded_data
     else:
         print(

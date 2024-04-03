@@ -7,7 +7,6 @@ from dotenv import load_dotenv
 from datetime import datetime
 from discord.ext.commands import AutoShardedBot
 from discord import app_commands
-from typing import Literal, Optional
 
 # Load environment variables from .env file
 load_dotenv()
@@ -33,7 +32,7 @@ async def on_ready():
     # guilds=bot.guilds
     # await mongo_db.update_summoner_region_all(guilds)
 
-    # test_guild = discord.Object(id=207292834678702080)
+    # test_guild = discord.Object(id=1223525030093127741)
     # await bot.tree.sync(guild=test_guild)
     await bot.tree.sync()
 
@@ -42,6 +41,14 @@ async def on_ready():
 async def on_guild_join(guild):
     print(f"Joined new guild: {guild.name} with Guild ID: {guild.id} ")
     await mongo_db.add_guild(guild.name, guild.id)
+
+
+# Event listener for interactions
+@bot.event
+async def on_interaction(interaction):
+    if interaction.type == discord.InteractionType.application_command:
+        print(f"\n[{interaction.guild}]  [{interaction.user}]  [/{interaction.command.qualified_name}]")
+
 
 
 # BASIC COMMANDS
@@ -79,6 +86,7 @@ async def enable(interaction: discord.Interaction):
         await interaction.response.send_message("This command must be used in a server.")
         return
 
+    await interaction.response.defer()
     guild_id = interaction.guild_id
     channel_id = interaction.channel_id
     main_channel_changed = await mongo_db.set_main_channel(guild_id, channel_id)
@@ -89,14 +97,14 @@ async def enable(interaction: discord.Interaction):
             description=f"Scuttle enabled on this channel",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Enable Command",
             description=f"Scuttle is already enabled on this channel.",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 
 # SUMMONERS COMMANDS
@@ -391,6 +399,8 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
 
     guild_name = interaction.guild
     guild_id = interaction.guild_id
+    
+    await interaction.response.defer()
 
     stats = await mongo_db.fetch_report_by_day_range(guild_id, range=range)
 
@@ -438,7 +448,7 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
 
         embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
 
-        await interaction.response.send_message(embeds=embeds_arr)
+        await interaction.followup.send(embeds=embeds_arr)
     else:
         embed = discord.Embed(
             title=f"❌ Reports Command",
@@ -446,7 +456,7 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
             color=discord.Color.green(),
         )
 
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 
 
