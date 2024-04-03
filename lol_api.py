@@ -14,6 +14,7 @@ regions = [
     "na1",
     "euw1",
     "kr",
+    "jp1"
     "br1",
     "eun1",
     "la1",
