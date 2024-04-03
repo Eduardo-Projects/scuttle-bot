@@ -281,20 +281,21 @@ async def report_automatic():
 
                     if stats:
                         summoners = await mongo_db.get_summoners(guild_id)
-                        summoners_names = [summoner["name"] for summoner in summoners]
-                        embed = discord.Embed(
-                            title=f"📈 Server {guild.name}'s stats for the past 7 days.",
-                            description=f"This is a general overview showing which summoner had the highest value for each stat in the past 7 days for Ranked Solo Queue.",
-                            color=discord.Color.green(),
-                        )
-                        for stat in stats:
-                            embed.add_field(name=f"✅ {stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
-                            
-                        embed.add_field(name="🏆 Summoners Compared:", value="", inline=False) 
-                        for name in summoners_names:
-                            embed.add_field(name="", value=name, inline=True)
+                        if summoners is not None:
+                            summoners_names = [summoner["name"] for summoner in summoners]
+                            embed = discord.Embed(
+                                title=f"📈 Server {guild.name}'s stats for the past 7 days.",
+                                description=f"This is a general overview showing which summoner had the highest value for each stat in the past 7 days for Ranked Solo Queue.",
+                                color=discord.Color.green(),
+                            )
+                            for stat in stats:
+                                embed.add_field(name=f"{stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
+                                
+                            embed.add_field(name="🏆 Summoners Compared:", value="", inline=False) 
+                            for name in summoners_names:
+                                embed.add_field(name="", value=name, inline=True)
 
-                        await channel.send(embed=embed)
+                            await channel.send(embed=embed)
                     else:
                         embed = discord.Embed(
                             title=f"❌ Automatic Weekly Report",
@@ -358,7 +359,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
                     color=discord.Color.green(),
                 )
                 for key, value in stats.items():
-                    embed.add_field(name=f"✅ {key}", value=value)
+                    embed.add_field(name=f"{key}", value=value)
 
                 embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
 
@@ -409,7 +410,7 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
             color=discord.Color.green(),
         )
         for stat in stats:
-            embed.add_field(name=f"✅ {stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
+            embed.add_field(name=f"{stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
         
 
         # Summoners
