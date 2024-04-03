@@ -29,6 +29,9 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
+    num_guilds = len(bot.guilds)
+    print(f"Connected to {num_guilds} Guilds.")
+
     # guilds=bot.guilds
     # await mongo_db.update_summoner_region_all(guilds)
 
