@@ -13,10 +13,10 @@ load_dotenv()
 regions = [
     "na1",
     "euw1",
+    "eun1",
     "kr",
     "jp1",
     "br1",
-    "eun1",
     "la1",
     "la2",
     "oc1",
@@ -25,7 +25,7 @@ regions = [
     "sg2",
     "th2",
     "tr1",
-    "tw2"
+    "tw2",
     "vn2"
 ]
 
@@ -45,6 +45,28 @@ async def handle_api_call(url):
                 return data
         except aiohttp.ClientResponseError as e:
             print(f"Error in API call: {e.status}, message='{e.message}'")
+            return None
+        
+
+
+async def handle_api_call_no_exception(url):
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    return await response.json()
+                if response.status == 429:  # Rate limit exceeded
+                    retry_after = int(response.headers.get("Retry-After", 1))
+                    print(f"Rate limit exceeded. Retrying in {retry_after} seconds.")
+                    await asyncio.sleep(retry_after)
+                    return await handle_api_call_no_exception(url)  #
+                else:
+                    # Log or handle unsuccessful API call (e.g., response status not 200)
+                    print(f"API call failed with status code: {response.status}")
+                    return None
+        except Exception as e:
+            # Log or handle any exceptions raised during the API call
+            print(f"An error occurred during API call to {url}: {str(e)}")
             return None
 
 
@@ -67,7 +89,7 @@ async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
 async def get_summoner_region(summoner_puuid):
     for region in regions:
         url = f"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{summoner_puuid}?api_key={os.getenv("RIOT_API_KEY")}"
-        data = await handle_api_call(url)
+        data = await handle_api_call_no_exception(url)
         if data:
             return region
     

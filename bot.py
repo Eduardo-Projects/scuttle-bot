@@ -146,6 +146,7 @@ async def summoners_add(interaction: discord.Interaction, summoner_name: str, ta
         await interaction.response.send_message("This command must be used in a server.")
         return
 
+    await interaction.response.defer()
     guild_id = interaction.guild_id
     guild_name = interaction.guild
     summoner_riot_id = f"{summoner_name} {tag}"
@@ -157,14 +158,14 @@ async def summoners_add(interaction: discord.Interaction, summoner_name: str, ta
             description=f"{summoner_riot_id} was successfully added to {guild_name}",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Summoner Add Command",
             description=f"Failed to add {summoner_riot_id} to {guild_name}",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 
 @summoners_group.command(name="remove", description="Removes a summoner from your Guild.")
