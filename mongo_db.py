@@ -200,3 +200,14 @@ async def fetch_all_summoner_match_data_by_range(summoner_puuid, range=7):
         return None
     else:
         return list(documents)
+
+
+# Checks if summoner's data has been fetched ye
+async def is_summoner_cached(puuid):
+    collection = db.cached_match_data_timestamps
+    is_cached = collection.find_one({"puuid": puuid})
+
+    if is_cached:
+        return True
+    else:
+        return False

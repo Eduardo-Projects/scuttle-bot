@@ -294,10 +294,21 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
                 color=discord.Color.green(),
             )
             embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id}`.", inline=True)
-            embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners`.", inline=True)
+            embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners list`.", inline=True)
             embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
             await interaction.response.send_message(embed=embed)
         else:
+            is_summoner_cached = await mongo_db.is_summoner_cached(puuid)
+
+            if not is_summoner_cached:
+                embed = discord.Embed(
+                    title=f"⏱️ Stats Command",
+                    description=f"Summoner **{summoner_riot_id}** has been added recently and therefore does not have any match data yet. Please allow about 1 hour to be able to display your stats. After this, you wont have to wait again!",
+                    color=discord.Color.green(),
+                )
+                await interaction.response.send_message(embed=embed)
+                return
+
             stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
             embed = discord.Embed(
                 title=f"📈 Summoner {summoner_riot_id}'s stats for the past {range} day(s).",
@@ -331,8 +342,15 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
     stats = await mongo_db.fetch_report_by_day_range(guild_id, range=range)
 
     if stats:
+        summoners_not_cached = []
         summoners = await mongo_db.get_summoners(guild_id)
         summoners_names = [summoner["name"] for summoner in summoners]
+
+        for summoner in summoners:
+            is_cached = await mongo_db.is_summoner_cached(puuid=summoner["puuid"])
+            if not is_cached:
+                summoners_not_cached.append(summoner["name"])
+
         embed = discord.Embed(
             title=f"📈 Server {guild_name}'s report for the past {range} days.",
             description=f"This is a general overview showing which summoner had the highest value for each stat in the past {range} days for Ranked Solo Queue.",
@@ -345,15 +363,29 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
         # Summoners
         summoners_embed = discord.Embed(
             title=f"🏆 Summoners Compared:",
-            description=f"This is a list of all the summoners in your Guild. Each of their stats have been compared.",
+            description=f"This is a list of all the summoners in your Guild whose stats have been compared.",
             color=discord.Color.green(),
         )
         for name in summoners_names:
-            summoners_embed.add_field(name="", value=name, inline=True)
+            if name not in summoners_not_cached:
+                summoners_embed.add_field(name="", value=name, inline=True)
+
+        embeds_arr=[embed, summoners_embed]
+
+        # Summoners not Cached
+        if len(summoners_not_cached) > 0:
+            summoners_not_cached_embed = discord.Embed(
+                title=f"⏱️ Summoners Not Compared:",
+                description=f"This is a list of all the summoners in your Guild who have been added recently and are waiting for their data to update.",
+                color=discord.Color.green(),
+            )
+            for name in summoners_not_cached:
+                summoners_not_cached_embed.add_field(name="", value=name, inline=True)
+            embeds_arr.append(summoners_not_cached_embed)
 
         embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
 
-        await interaction.response.send_message(embeds=[embed, summoners_embed])
+        await interaction.response.send_message(embeds=embeds_arr)
     else:
         embed = discord.Embed(
             title=f"❌ Reports Command",
