@@ -51,10 +51,11 @@ async def help(interaction:discord.Interaction):
         '📈 /stats daily {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `/stats Username #NA1`",
         '📈 /stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `/stats weekly Username #NA1`",
         '📈 /stats monthly {RIOT ID}}': "Displays monthly stats for Riot ID specified\nExample: `/stats monthly Username #NA1`",
-        '💼 /report weekly': "Displays weekly stat comparison for all summoners in your Guild",
-        '💼 /report monthly': "Displays monthly stat comparison for all summoners in your Guild",
+        '💼 /reports weekly': "Displays weekly stat comparison for all summoners in your Guild",
+        '💼 /reports monthly': "Displays monthly stat comparison for all summoners in your Guild",
         '🎮 /summoners list': "Displays all summoners in your Guild",
-        '🎮 /summoners add {RIOT ID}': "Adds a summoner to your Guild\nExample: `/summoners add Username #NA1`"
+        '🎮 /summoners add {RIOT ID}': "Adds a summoner to your Guild\nExample: `/summoners add Username #NA1`",
+        '🎮 /summoners remove {RIOT ID}': "Removes a summoner from your Guild\nExample: `/summoners remove Username #NA1`"
     }
 
     for command, description in commands.items():
@@ -96,7 +97,6 @@ async def enable(interaction: discord.Interaction):
 
 
 summoners_group = app_commands.Group(name="summoners", description="Commands related to summoners")
-bot.tree.add_command(summoners_group)
 
 
 @summoners_group.command(name="list", description="Displays a list of all summoners in your Guild.")
@@ -160,6 +160,40 @@ async def summoners_add(interaction: discord.Interaction, summoner_name: str, ta
         )
         await interaction.response.send_message(embed=embed)
 
+
+@summoners_group.command(name="remove", description="Removes a summoner from your Guild.")
+@app_commands.describe(
+    summoner_name="The name of the summoner",
+    tag="Riot Tag"
+)
+async def summoners_remove(interaction: discord.Interaction, summoner_name: str, tag: str):
+    # Ensure the command is being called from a discord server
+    if interaction.guild_id is None:
+        await interaction.response.send_message("This command must be used in a server.")
+        return
+
+    guild_id = interaction.guild_id
+    guild_name = interaction.guild
+    summoner_riot_id = f"{summoner_name} {tag}"
+    summoner_removed = await mongo_db.remove_summoner(summoner_riot_id, guild_id)
+
+    if summoner_removed:
+        embed = discord.Embed(
+            title=f"✅ Summoner Remove Command",
+            description=f"{summoner_riot_id} was successfully removed from {guild_name}",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=embed)
+    else:
+        embed = discord.Embed(
+            title=f"❌ Summoner Remove Command",
+            description=f"Failed to remove {summoner_riot_id} from {guild_name}",
+            color=discord.Color.green(),
+        )
+        await interaction.response.send_message(embed=embed)
+
+
+bot.tree.add_command(summoners_group)
 
 # STATS COMMANDS
 
