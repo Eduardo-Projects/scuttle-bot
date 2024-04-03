@@ -10,6 +10,24 @@ import mongo_db
 # Load environment variables from .env file
 load_dotenv()
 
+regions = [
+    "na1",
+    "euw1",
+    "kr",
+    "br1",
+    "eun1",
+    "la1",
+    "la2",
+    "oc1"
+    "ph2",
+    "ru",
+    "sg2",
+    "th2",
+    "tr1",
+    "tw2"
+    "vn2"
+]
+
 # Handler function for all API calls made
 # Contains error handling and backup rate limit handling
 async def handle_api_call(url):
@@ -43,6 +61,15 @@ async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
         print(f"Failed to fetch summoner puuid. {summoner_riot_id} is not a valid Riot ID.")
         return None
 
+
+# Returns the Region a Summoner is from
+async def get_summoner_region(summoner_puuid):
+    for region in regions:
+        url = f"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{summoner_puuid}?api_key={os.getenv("RIOT_API_KEY")}"
+        print(url)
+        data = await handle_api_call(url)
+        if data:
+            return region
 
 # Checks to make sure provided riot id follows format: 'String1 #String2'
 # Keep in mind there can be any number of strings before the #

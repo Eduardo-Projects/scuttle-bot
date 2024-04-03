@@ -30,7 +30,9 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
-    await bot.tree.sync()
+    await bot.tree.sync(guild=discord.Object(id=1223525030093127741))
+    # await bot.tree.sync()
+
 
 @bot.event
 async def on_guild_join(guild):
@@ -267,7 +269,7 @@ async def report_automatic():
 
                 if channel:
                     await channel.send(
-                        f"*Loading automatic report, this may take a few minutes ...*"
+                        f"*Loading automatic weekly report...*"
                     )
 
                     stats = await mongo_db.fetch_report_by_day_range(guild_id, range=7)

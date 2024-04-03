@@ -20,11 +20,12 @@ async def add_summoner(summoner_riot_id, guild_id):
     # check if riot user exists before inserting into db
     puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
     if puuid:
+        region = await lol_api.get_summoner_region(puuid)
         collection = db.discord_servers
         # Update or insert  summoner riot id into the summoners array for the corresponding discord server
         result = collection.update_one(
             {"guild_id": guild_id},
-            {"$addToSet": {"summoners": {"name": summoner_riot_id, "puuid": puuid}}},
+            {"$addToSet": {"summoners": {"name": summoner_riot_id, "puuid": puuid, "region": region}}},
             upsert=True,  # Creates a new document if one doesn't exist
         )
         if result.acknowledged:
@@ -66,6 +67,7 @@ async def remove_summoner(summoner_riot_id, guild_id):
         f"\nFailed to remove summoner {summoner_riot_id} from database. Make sure this summoner is in this Guild."
     )
     return False
+
 
 # Returns a list of all summoners within a Guild (discord server)
 async def get_summoners(guild_id):
