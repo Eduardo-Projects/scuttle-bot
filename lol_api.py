@@ -66,10 +66,11 @@ async def fetch_summoner_puuid_by_riot_id(summoner_riot_id):
 async def get_summoner_region(summoner_puuid):
     for region in regions:
         url = f"https://{region}.api.riotgames.com/lol/summoner/v4/summoners/by-puuid/{summoner_puuid}?api_key={os.getenv("RIOT_API_KEY")}"
-        print(url)
         data = await handle_api_call(url)
         if data:
             return region
+    
+    return None
 
 # Checks to make sure provided riot id follows format: 'String1 #String2'
 # Keep in mind there can be any number of strings before the #

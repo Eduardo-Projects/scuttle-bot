@@ -229,6 +229,39 @@ async def fetch_all_summoner_match_data_by_range(summoner_puuid, range=7):
         return list(documents)
 
 
+# Updates the region for everys summoner in the database
+async def update_summoner_region_all(guilds):
+    collection = db.discord_servers
+    if guilds:
+        for guild in guilds:
+            summoners = await get_summoners(guild.id)
+            if summoners:
+                for summoner in summoners:
+                    region = await lol_api.get_summoner_region(summoner["puuid"])
+                    result = collection.update_one(
+                        { 
+                            "guild_id": guild.id, 
+                            "summoners.puuid": summoner["puuid"] 
+                        },
+                        { 
+                            "$set": { "summoners.$.region": region } 
+                        }
+                    )
+
+                    if result.acknowledged:
+                        print(
+                            f"\nRegion for summoner '{summoner["name"]}' was successfully updtaed to {region} for Guild {guild.name}"
+                        )
+                    else:
+                        print(
+                            f"\nFailed to update region for '{summoner["name"]}'."
+                        )
+            else:
+                print(f"Guild {guild.name} has no summoners. Skipping.")        
+    else:
+        print(f"No guilds provided.")
+
+
 # Checks if summoner's data has been fetched ye
 async def is_summoner_cached(puuid):
     collection = db.cached_match_data_timestamps
