@@ -326,9 +326,44 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
 
     if puuid:
         summoners_in_guild = await mongo_db.get_summoners(guild_id)
-        is_summoner_in_guild = any(summoner['puuid'] == puuid for summoner in summoners_in_guild)
+        if summoners_in_guild is not None:
+            is_summoner_in_guild = any(summoner['puuid'] == puuid for summoner in summoners_in_guild)
 
-        if not is_summoner_in_guild:
+            if not is_summoner_in_guild:
+                embed = discord.Embed(
+                    title=f"❌ Summoner {summoner_riot_id} is not part of your guild.",
+                    description=f"",
+                    color=discord.Color.green(),
+                )
+                embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id}`.", inline=True)
+                embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners list`.", inline=True)
+                embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
+                await interaction.response.send_message(embed=embed)
+            else:
+                is_summoner_cached = await mongo_db.is_summoner_cached(puuid)
+
+                if not is_summoner_cached:
+                    embed = discord.Embed(
+                        title=f"⏱️ Stats Command",
+                        description=f"Summoner **{summoner_riot_id}** has been added recently and therefore does not have any match data yet. Please allow about 1 hour to be able to display your stats. After this, you wont have to wait again!",
+                        color=discord.Color.green(),
+                    )
+                    await interaction.response.send_message(embed=embed)
+                    return
+
+                stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
+                embed = discord.Embed(
+                    title=f"📈 Summoner {summoner_riot_id}'s stats for the past {range} day(s).",
+                    description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past {range} day(s).",
+                    color=discord.Color.green(),
+                )
+                for key, value in stats.items():
+                    embed.add_field(name=f"✅ {key}", value=value)
+
+                embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
+
+                await interaction.response.send_message(embed=embed)
+        else:
             embed = discord.Embed(
                 title=f"❌ Summoner {summoner_riot_id} is not part of your guild.",
                 description=f"",
@@ -337,30 +372,6 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
             embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id}`.", inline=True)
             embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners list`.", inline=True)
             embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
-            await interaction.response.send_message(embed=embed)
-        else:
-            is_summoner_cached = await mongo_db.is_summoner_cached(puuid)
-
-            if not is_summoner_cached:
-                embed = discord.Embed(
-                    title=f"⏱️ Stats Command",
-                    description=f"Summoner **{summoner_riot_id}** has been added recently and therefore does not have any match data yet. Please allow about 1 hour to be able to display your stats. After this, you wont have to wait again!",
-                    color=discord.Color.green(),
-                )
-                await interaction.response.send_message(embed=embed)
-                return
-
-            stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
-            embed = discord.Embed(
-                title=f"📈 Summoner {summoner_riot_id}'s stats for the past {range} day(s).",
-                description=f"This is a general overview of the collected stats for {summoner_riot_id} 's Ranked Solo Queue matches over the past {range} day(s).",
-                color=discord.Color.green(),
-            )
-            for key, value in stats.items():
-                embed.add_field(name=f"✅ {key}", value=value)
-
-            embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
-
             await interaction.response.send_message(embed=embed)
     else:
         embed = discord.Embed(
