@@ -35,9 +35,9 @@ async def on_ready():
     # guilds=bot.guilds
     # await mongo_db.update_summoner_region_all(guilds)
 
-    test_guild = discord.Object(id=1223525030093127741)
-    await bot.tree.sync(guild=test_guild)
-    # await bot.tree.sync()
+    # test_guild = discord.Object(id=1223525030093127741)
+    # await bot.tree.sync(guild=test_guild)
+    await bot.tree.sync()
 
 
 @bot.event
