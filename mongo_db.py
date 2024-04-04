@@ -260,7 +260,7 @@ async def update_summoner_region_all(guilds):
         print(f"No guilds provided.")
 
 
-# Checks if summoner's data has been fetched ye
+# Checks if summoner's data has been fetched yet
 async def is_summoner_cached(puuid):
     collection = db.cached_match_data_timestamps
     is_cached = collection.find_one({"puuid": puuid})
@@ -269,3 +269,13 @@ async def is_summoner_cached(puuid):
         return True
     else:
         return False
+
+
+# Updates a command analytics in database
+async def update_command_analytics(command):
+    collection = db.command_analytics
+    collection.update_one(
+        {"command_name": command},
+        {"$inc": {"times_called": 1}},
+        upsert=True
+    )

@@ -51,6 +51,8 @@ async def on_guild_join(guild):
 async def on_interaction(interaction):
     if interaction.type == discord.InteractionType.application_command:
         print(f"\n[{interaction.guild}]  [{interaction.user}]  [/{interaction.command.qualified_name}]")
+        command_name = interaction.command.qualified_name.replace(" ", "_")
+        await mongo_db.update_command_analytics(command=command_name)
 
 
 
