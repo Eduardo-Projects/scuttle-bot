@@ -226,7 +226,8 @@ async def fetch_all_summoner_match_data_by_range(summoner_puuid, range=7):
         return list(documents)
 
 
-# Updates the region for everys summoner in the database
+# Updates the region for every summoner in every guild in the database
+# Does not get called anywhere, mainly for admin use
 async def update_summoner_region_all(guilds):
     collection = db.discord_servers
     if guilds:

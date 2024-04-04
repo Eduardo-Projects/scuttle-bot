@@ -35,9 +35,9 @@ async def on_ready():
     # guilds=bot.guilds
     # await mongo_db.update_summoner_region_all(guilds)
 
-    # test_guild = discord.Object(id=1223525030093127741)
-    # await bot.tree.sync(guild=test_guild)
-    await bot.tree.sync()
+    test_guild = discord.Object(id=1223525030093127741)
+    await bot.tree.sync(guild=test_guild)
+    # await bot.tree.sync()
 
 
 @bot.event
@@ -61,7 +61,6 @@ bot.remove_command('help')
 @bot.tree.command(name="help",description="Shows list of commands.")
 async def help(interaction:discord.Interaction):
     embed = discord.Embed(title="🪴 Scuttle is brought to you by Eduardo Alba", description="I am a bot that provides quick and detailed **League of Legends** statistics.", color=discord.Color.green())
-
     commands = {
         '✅ /enable': 'Sets the main channel to where the bot will send automated messages',
         '📈 /stats daily {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `/stats Username #NA1`",
@@ -90,6 +89,7 @@ async def enable(interaction: discord.Interaction):
         return
 
     await interaction.response.defer()
+
     guild_id = interaction.guild_id
     channel_id = interaction.channel_id
     main_channel_changed = await mongo_db.set_main_channel(guild_id, channel_id)
@@ -123,11 +123,14 @@ async def summoners(interaction: discord.Interaction):
         await interaction.response.send_message("This command must be used in a server.")
         return
 
+    await interaction.response.defer()
+
     guild_name = interaction.guild
     guild_id = interaction.guild_id
     summoners = await mongo_db.get_summoners(guild_id)
 
     if summoners:
+        print(f"Summoners in {guild_name}: {[summoner["name"] for summoner in summoners]}")
         embed = discord.Embed(
             title=f"🎮 {guild_name}'s Summoners",
             description=f"This is a list of all the summoners added to this guild.",
@@ -135,15 +138,14 @@ async def summoners(interaction: discord.Interaction):
         )
         for summoner in summoners:
             embed.add_field(name="", value=f"🟢 {summoner["name"]}", inline=False)
-
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Summoners",
             description=f"{guild_name} does not have any summoners. Add summoners by typing /add_summoner RiotName #Tag",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 
 @summoners_group.command(name="add", description="Adds a summoner to your Guild.")
@@ -158,6 +160,7 @@ async def summoners_add(interaction: discord.Interaction, summoner_name: str, ta
         return
 
     await interaction.response.defer()
+
     guild_id = interaction.guild_id
     guild_name = interaction.guild
     summoner_riot_id = f"{summoner_name} {tag}"
@@ -189,6 +192,8 @@ async def summoners_remove(interaction: discord.Interaction, summoner_name: str,
     if interaction.guild_id is None:
         await interaction.response.send_message("This command must be used in a server.")
         return
+    
+    await interaction.response.defer()
 
     guild_id = interaction.guild_id
     guild_name = interaction.guild
@@ -201,14 +206,14 @@ async def summoners_remove(interaction: discord.Interaction, summoner_name: str,
             description=f"{summoner_riot_id} was successfully removed from {guild_name}",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Summoner Remove Command",
             description=f"Failed to remove {summoner_riot_id} from {guild_name}",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 
 bot.tree.add_command(summoners_group)
@@ -273,26 +278,26 @@ async def report_automatic():
 
     # check if it is 8:00 pm on a Sunday
     if now.weekday() == 6 and now.hour == 20 and now.minute == 00:
-        all_guilds = bot.guilds
-        for guild in all_guilds:
-            guild_id = guild.id
-            channel_id = await mongo_db.get_main_channel(guild_id)
+        for guild in bot.guilds:
+            channel_id = await mongo_db.get_main_channel(guild.id)
 
-            print(f"\nGetting automatic report for Guild with ID: {guild_id}")
+            print(f"\n[{guild.name}]  [Automated Report]  [Weekly]")
 
             if channel_id:
                 channel = bot.get_channel(channel_id)
-
                 if channel:
-                    await channel.send(
-                        f"*Loading automatic weekly report...*"
-                    )
-
-                    stats = await mongo_db.fetch_report_by_day_range(guild_id, range=7)
-
+                    await channel.send(f"*Loading automated weekly report...*")
+                    stats = await mongo_db.fetch_report_by_day_range(guild.id, range=7)
                     if stats:
-                        summoners = await mongo_db.get_summoners(guild_id)
+                        summoners_not_cached = []
+                        summoners = await mongo_db.get_summoners(guild.id)
+                        
                         if summoners is not None:
+                            for summoner in summoners:
+                                is_cached = await mongo_db.is_summoner_cached(puuid=summoner["puuid"])
+                                if not is_cached:
+                                    summoners_not_cached.append(summoner["name"])
+
                             summoners_names = [summoner["name"] for summoner in summoners]
                             embed = discord.Embed(
                                 title=f"📈 Server {guild.name}'s stats for the past 7 days.",
@@ -301,12 +306,20 @@ async def report_automatic():
                             )
                             for stat in stats:
                                 embed.add_field(name=f"{stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
-                                
-                            embed.add_field(name="🏆 Summoners Compared:", value="", inline=False) 
-                            for name in summoners_names:
-                                embed.add_field(name="", value=name, inline=True)
 
-                            await channel.send(embed=embed)
+                            # Summoners
+                            summoners_embed = discord.Embed(
+                                title=f"🏆 Summoners Compared:",
+                                description=f"This is a list of all the summoners in your Guild whose stats have been compared.",
+                                color=discord.Color.green(),
+                            )
+                            for name in summoners_names:
+                                if name not in summoners_not_cached:
+                                    summoners_embed.add_field(name="", value=name, inline=True)
+
+                            embeds_arr=[embed, summoners_embed]
+
+                            await channel.send(embeds=embeds_arr)
                     else:
                         embed = discord.Embed(
                             title=f"❌ Automatic Weekly Report",
@@ -318,7 +331,7 @@ async def report_automatic():
                 else:
                     print("Channel not found.")
             else:
-                print(f"Guild with id {guild_id} does not have a main channel set.")
+                print(f"{guild.name} does not have a main channel set.")
 
 
 # HELPER FUNCTIONS
