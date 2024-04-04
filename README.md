@@ -35,7 +35,7 @@
 
 ## How To Use
 
-1. [Add Scuttle](https://scuttle.gg) to your discord server.
+1. [Add Scuttle](https://discord.com/oauth2/authorize?client_id=1222960533523796089&permissions=17600776293376&scope=bot) to your discord server.
 2. Type `/enable` in the channel you wish to receive automated reports
 3. Add summoners to your guild using `/summoners add {name} {#tag}`
 4. Wait until the start of the next hour before Scuttle has retreived and updated the data for all the Summoners in your Guild.
@@ -45,7 +45,7 @@
 
 This software uses the following open source packages:
 
-- [discord.py](http://electron.atom.io/)
+- [discord.py](https://discordpy.readthedocs.io/en/stable/)
 
 ## Support
 
