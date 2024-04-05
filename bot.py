@@ -165,7 +165,7 @@ async def summoners_add(interaction: discord.Interaction, summoner_name: str, ta
 
     guild_id = interaction.guild_id
     guild_name = interaction.guild
-    summoner_riot_id = f"{summoner_name} {tag}"
+    summoner_riot_id = f"{summoner_name} #{tag}"
     summoner_added = await mongo_db.add_summoner(summoner_riot_id, guild_id)
 
     if summoner_added:
@@ -199,7 +199,7 @@ async def summoners_remove(interaction: discord.Interaction, summoner_name: str,
 
     guild_id = interaction.guild_id
     guild_name = interaction.guild
-    summoner_riot_id = f"{summoner_name} {tag}"
+    summoner_riot_id = f"{summoner_name} #{tag}"
     summoner_removed = await mongo_db.remove_summoner(summoner_riot_id, guild_id)
 
     if summoner_removed:
@@ -233,7 +233,7 @@ bot.tree.add_command(stats_group)
     tag="Riot Tag"
 )
 async def stats(interaction: discord.Interaction, summoner_name: str, tag:str):
-    summoner_riot_id = f"{summoner_name} {tag}"
+    summoner_riot_id = f"{summoner_name} #{tag}"
     await process_stats_by_day_range(interaction, summoner_riot_id, range=1)
 
 
@@ -243,7 +243,7 @@ async def stats(interaction: discord.Interaction, summoner_name: str, tag:str):
     tag="Riot Tag"
 )
 async def stats_weekly(interaction: discord.Interaction, summoner_name: str, tag:str):
-    summoner_riot_id = f"{summoner_name} {tag}"
+    summoner_riot_id = f"{summoner_name} #{tag}"
     await process_stats_by_day_range(interaction, summoner_riot_id, range=7)
 
 
@@ -253,7 +253,7 @@ async def stats_weekly(interaction: discord.Interaction, summoner_name: str, tag
     tag="Riot Tag"
 )
 async def stats_monthly(interaction: discord.Interaction, summoner_name: str, tag:str):
-    summoner_riot_id = f"{summoner_name} {tag}"
+    summoner_riot_id = f"{summoner_name} #{tag}"
     await process_stats_by_day_range(interaction, summoner_riot_id, range=30)
 
 
