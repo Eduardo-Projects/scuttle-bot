@@ -65,14 +65,14 @@ async def help(interaction:discord.Interaction):
     embed = discord.Embed(title="🪴 Scuttle is brought to you by Eduardo Alba", description="I am a bot that provides quick and detailed **League of Legends** statistics.", color=discord.Color.green())
     commands = {
         '✅ /enable': 'Sets the main channel to where the bot will send automated messages',
-        '📈 /stats daily {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `/stats Username #NA1`",
-        '📈 /stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `/stats weekly Username #NA1`",
-        '📈 /stats monthly {RIOT ID}}': "Displays monthly stats for Riot ID specified\nExample: `/stats monthly Username #NA1`",
+        '📈 /stats daily {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `/stats Username NA1`",
+        '📈 /stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `/stats weekly Username NA1`",
+        '📈 /stats monthly {RIOT ID}}': "Displays monthly stats for Riot ID specified\nExample: `/stats monthly Username NA1`",
         '💼 /reports weekly': "Displays weekly stat comparison for all summoners in your Guild",
         '💼 /reports monthly': "Displays monthly stat comparison for all summoners in your Guild",
         '🎮 /summoners list': "Displays all summoners in your Guild",
-        '🎮 /summoners add {RIOT ID}': "Adds a summoner to your Guild\nExample: `/summoners add Username #NA1`",
-        '🎮 /summoners remove {RIOT ID}': "Removes a summoner from your Guild\nExample: `/summoners remove Username #NA1`"
+        '🎮 /summoners add {RIOT ID}': "Adds a summoner to your Guild\nExample: `/summoners add Username NA1`",
+        '🎮 /summoners remove {RIOT ID}': "Removes a summoner from your Guild\nExample: `/summoners remove Username NA1`"
     }
 
     for command, description in commands.items():
@@ -144,7 +144,7 @@ async def summoners(interaction: discord.Interaction):
     else:
         embed = discord.Embed(
             title=f"❌ Summoners",
-            description=f"{guild_name} does not have any summoners. Add summoners by typing /add_summoner RiotName #Tag",
+            description=f"{guild_name} does not have any summoners. Add summoners by typing /add_summoner RiotName Tag",
             color=discord.Color.green(),
         )
         await interaction.followup.send(embed=embed)
@@ -362,7 +362,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
                     description=f"",
                     color=discord.Color.green(),
                 )
-                embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id}`.", inline=True)
+                embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id.replace("#", "")}`.", inline=True)
                 embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners list`.", inline=True)
                 embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
                 await interaction.response.send_message(embed=embed)
