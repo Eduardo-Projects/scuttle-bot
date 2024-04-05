@@ -67,7 +67,7 @@ async def help(interaction:discord.Interaction):
         '✅ /enable': 'Sets the main channel to where the bot will send automated messages',
         '📈 /stats daily {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `/stats Username NA1`",
         '📈 /stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `/stats weekly Username NA1`",
-        '📈 /stats monthly {RIOT ID}}': "Displays monthly stats for Riot ID specified\nExample: `/stats monthly Username NA1`",
+        '📈 /stats monthly {RIOT ID}': "Displays monthly stats for Riot ID specified\nExample: `/stats monthly Username NA1`",
         '💼 /reports weekly': "Displays weekly stat comparison for all summoners in your Guild",
         '💼 /reports monthly': "Displays monthly stat comparison for all summoners in your Guild",
         '🎮 /summoners list': "Displays all summoners in your Guild",
