@@ -32,6 +32,9 @@ async def on_ready():
     num_guilds = len(bot.guilds)
     print(f"Connected to {num_guilds} Guilds.")
 
+    guild_names = [guild.name for guild in bot.guilds]
+    print(f"Guilds Connected to: {guild_names}")
+
     # guilds=bot.guilds
     # await mongo_db.update_summoner_region_all(guilds)
 
