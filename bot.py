@@ -31,6 +31,7 @@ async def on_ready():
 
     num_guilds = len(bot.guilds)
     print(f"Connected to {num_guilds} Guilds.")
+    await mongo_db.update_guild_count(len(num_guilds))
 
     guild_names = [guild.name for guild in bot.guilds]
     print(f"Guilds Connected to: {guild_names}")
@@ -47,6 +48,7 @@ async def on_ready():
 async def on_guild_join(guild):
     print(f"Joined new guild: {guild.name} with Guild ID: {guild.id} ")
     await mongo_db.add_guild(guild.name, guild.id)
+    await mongo_db.update_guild_count(len(bot.guilds))
 
 
 # Event listener for interactions

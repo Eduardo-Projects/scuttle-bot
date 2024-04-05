@@ -5,6 +5,7 @@ import lol_api
 import certifi
 from datetime import datetime, timedelta, timezone
 import utils
+from bson.objectid import ObjectId
 
 # Load environment variables from .env file
 load_dotenv()
@@ -277,5 +278,14 @@ async def update_command_analytics(command):
     collection.update_one(
         {"command_name": command},
         {"$inc": {"times_called": 1}},
+        upsert=True
+    )
+
+# Updates guild coint in database
+async def update_guild_count(count):
+    collection = db.guild_count
+    collection.update_one(
+        {'_id': ObjectId("660f547946c0829673957eba")},
+        {"$set": {'num_guilds': count, "last_updated": datetime.now()}},
         upsert=True
     )
