@@ -470,7 +470,7 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
     else:
         embed = discord.Embed(
             title=f"❌ Reports Command",
-            description=f"Error fetching report. Make sure you have added summoners to your server with /summoner add Name #Tag",
+            description=f"Error fetching report. Make sure you have added summoners to your server with /summoner add Name Tag",
             color=discord.Color.green(),
         )
 
