@@ -31,7 +31,7 @@ async def on_ready():
 
     num_guilds = len(bot.guilds)
     print(f"Connected to {num_guilds} Guilds.")
-    await mongo_db.update_guild_count(len(num_guilds))
+    await mongo_db.update_guild_count(num_guilds)
 
     guild_names = [guild.name for guild in bot.guilds]
     print(f"Guilds Connected to: {guild_names}")
