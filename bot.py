@@ -350,6 +350,8 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
         await interaction.response.send_message("This command must be used in a server.")
         return
 
+    await interaction.response.defer()
+
     guild_name = interaction.guild
     guild_id = interaction.guild_id
 
@@ -370,7 +372,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
                 embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id.replace("#", "")}`.", inline=True)
                 embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners list`.", inline=True)
                 embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
-                await interaction.response.send_message(embed=embed)
+                await interaction.followup.send(embed=embed)
             else:
                 is_summoner_cached = await mongo_db.is_summoner_cached(puuid)
 
@@ -380,7 +382,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
                         description=f"Summoner **{summoner_riot_id}** has been added recently and therefore does not have any match data yet. Please allow about 1 hour to be able to display your stats. After this, you wont have to wait again!",
                         color=discord.Color.green(),
                     )
-                    await interaction.response.send_message(embed=embed)
+                    await interaction.followup.send(embed=embed)
                     return
 
                 stats = await mongo_db.fetch_summoner_stats_by_day_range(puuid, range=range)
@@ -394,7 +396,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
 
                 embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
 
-                await interaction.response.send_message(embed=embed)
+                await interaction.followup.send(embed=embed)
         else:
             embed = discord.Embed(
                 title=f"❌ Summoner {summoner_riot_id} is not part of your guild.",
@@ -404,14 +406,14 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
             embed.add_field(name=f"📈 Viewing Stats", value=f"If you want to view stats for `{summoner_riot_id}`, please add them to your guild by typing `/summoners add {summoner_riot_id}`.", inline=True)
             embed.add_field(name=f"👁 View Summoners in Your Guild", value="To view which summoners are part of your guild, type `/summoners list`.", inline=True)
             embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
-            await interaction.response.send_message(embed=embed)
+            await interaction.followup.send(embed=embed)
     else:
         embed = discord.Embed(
             title=f"❌ Stats Command",
             description=f"Error getting stats for summoner {summoner_riot_id}. Make sure this user exists.",
             color=discord.Color.green(),
         )
-        await interaction.response.send_message(embed=embed)
+        await interaction.followup.send(embed=embed)
 
 
 async def process_report_by_day_range(interaction: discord.Interaction, range):
