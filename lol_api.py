@@ -44,7 +44,7 @@ async def handle_api_call(url):
                 data = await response.json()
                 return data
         except aiohttp.ClientResponseError as e:
-            print(f"Error in API call: {e.status}, message='{e.message}', url =`{url}")
+            print(f"Error in API call: {e.status}, message='{e.message}'")
             return None
         
 
