@@ -31,6 +31,9 @@ async def on_ready():
     report_automatic.start()
     print("Started automatic report job.")
 
+    broadcast_donation_automatic.start()
+    print("Started automatic donation broadcast job.")
+
     num_guilds = len(bot.guilds)
     print(f"Connected to {num_guilds} Guilds.")
     await mongo_db.update_guild_count(num_guilds)
@@ -293,7 +296,7 @@ async def report(interaction: discord.Interaction, guild_id: str):
 async def report_automatic():
     now = datetime.now()
 
-    # check if it is 8:00 pm on a Sunday
+    # check if it is 4:00 pm EST on a Sunday
     if now.weekday() == 6 and now.hour == 20 and now.minute == 00:
         for guild in bot.guilds:
             channel_id = await mongo_db.get_main_channel(guild.id)
@@ -345,6 +348,31 @@ async def report_automatic():
                         )
 
                         await channel.send(embed=embed)
+                else:
+                    print("Channel not found.")
+            else:
+                print(f"{guild.name} does not have a main channel set.")
+
+
+# BROADCAST MESSAGES
+
+
+@tasks.loop(minutes=1)
+async def broadcast_donation_automatic():
+    now = datetime.now()
+
+    # broadcast donation message at 5:00 pm EST on the 28th of every month.
+    if now.day == 28 and now.hour == 21 and now.minute == 00:
+        for guild in bot.guilds:
+            channel_id = await mongo_db.get_main_channel(guild.id)
+            print(f"\n[{guild.name}]  [Automated Donation Broadcast]  [Monthly]")
+
+            if channel_id:
+                channel = bot.get_channel(channel_id)
+                if channel:
+                    embed = discord.Embed(title="🌟 Support Scuttle 🌟", 
+                                          description=f"I hope you're enjoying using Scuttle to enhance your League of Legends experience!\n\nRunning and maintaining this bot takes a lot of time and resources. If you like what we do and want to help us keep the bot running smoothly, consider making a small donation. Every little bit helps us continue to develop and improve this service for you!\n\n🪴 [**Support Us Here!**](https://buymeacoffee.com/eduardoalba) \n\nThank you for your support, and happy gaming! 🎮", color=discord.Color.green())
+                    await channel.send(embed=embed)
                 else:
                     print("Channel not found.")
             else:
