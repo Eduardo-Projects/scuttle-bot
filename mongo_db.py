@@ -289,3 +289,9 @@ async def update_guild_count(count):
         {"$set": {'num_guilds': count, "last_updated": datetime.now()}},
         upsert=True
     )
+
+# Retrieve guild data by id
+async def get_guild_by_id(guild_id):
+    collection = db.discord_servers
+    document = collection.find_one({"guild_id": guild_id})
+    return document

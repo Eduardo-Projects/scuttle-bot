@@ -17,6 +17,8 @@ intents.messages = True
 intents.guilds = True
 
 bot = commands.Bot(command_prefix="/", intents=intents)
+owner_id = os.getenv("OWNER_DISCORD_ID")
+owner_id = int(owner_id)
 
 
 # EVENTS
@@ -278,6 +280,14 @@ async def report(interaction: discord.Interaction):
 async def report(interaction: discord.Interaction):
     await process_report_by_day_range(interaction, range=30)
 
+@reports_group.command(name="admin", description="This command is only for the bot admin.")
+@app_commands.describe(
+    guild_id="The id of the guild.",
+)
+async def report(interaction: discord.Interaction, guild_id: str):
+    guild_id = int(guild_id)
+    await process_report_by_day_range_admin(interaction, guild_id, range=30)
+
 
 @tasks.loop(minutes=1)
 async def report_automatic():
@@ -483,6 +493,91 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
 
         await interaction.followup.send(embed=embed)
 
+
+async def process_report_by_day_range_admin(interaction: discord.Interaction, guild_id, range):
+    # Ensure the command is being called from a discord server
+    if interaction.guild is None:
+        await interaction.response.send_message("This command must be used in a server.")
+        return
+
+    await interaction.response.defer()
+
+    if interaction.user.id != owner_id:
+        print(f"User {interaction.user} in guild {interaction.guild} tried to use Admin command.")
+        error_embed = discord.Embed(
+            title=f"❌ Reports Command",
+            description=f"This command is only for the bot admin.",
+            color=discord.Color.green(),
+        )
+        await interaction.followup.send(embed=error_embed)
+    else:
+        guild = await mongo_db.get_guild_by_id(guild_id)
+
+        if not guild:
+            print(f"Guild with id {guild_id} does not exist.")
+            error_embed = discord.Embed(
+                title=f"❌ Reports Command",
+                description=f"This guild does not exist",
+                color=discord.Color.green(),
+            )
+            await interaction.followup.send(embed=error_embed)
+        else:
+            guild_name = guild["name"]
+            stats = await mongo_db.fetch_report_by_day_range(guild_id, range=range)
+
+            if stats:
+                summoners_not_cached = []
+                summoners = await mongo_db.get_summoners(guild_id)
+                summoners_names = [summoner["name"] for summoner in summoners]
+
+                for summoner in summoners:
+                    is_cached = await mongo_db.is_summoner_cached(puuid=summoner["puuid"])
+                    if not is_cached:
+                        summoners_not_cached.append(summoner["name"])
+
+                embed = discord.Embed(
+                    title=f"📈 Server {guild_name}'s report for the past {range} days.",
+                    description=f"This is a general overview showing which summoner had the highest value for each stat in the past {range} days for Ranked Solo Queue.",
+                    color=discord.Color.green(),
+                )
+                for stat in stats:
+                    embed.add_field(name=f"{stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
+                
+
+                # Summoners
+                summoners_embed = discord.Embed(
+                    title=f"🏆 Summoners Compared:",
+                    description=f"This is a list of all the summoners in your Guild whose stats have been compared.",
+                    color=discord.Color.green(),
+                )
+                for name in summoners_names:
+                    if name not in summoners_not_cached:
+                        summoners_embed.add_field(name="", value=name, inline=True)
+
+                embeds_arr=[embed, summoners_embed]
+
+                # Summoners not Cached
+                if len(summoners_not_cached) > 0:
+                    summoners_not_cached_embed = discord.Embed(
+                        title=f"⏱️ Summoners Not Compared:",
+                        description=f"This is a list of all the summoners in your Guild who have been added recently and are waiting for their data to update.",
+                        color=discord.Color.green(),
+                    )
+                    for name in summoners_not_cached:
+                        summoners_not_cached_embed.add_field(name="", value=name, inline=True)
+                    embeds_arr.append(summoners_not_cached_embed)
+
+                embed.set_footer(text="📝 Note: match data is updated hourly on the hour. If you add a new summoner to your Guild, expect to see stats at the next hour.")
+
+                await interaction.followup.send(embeds=embeds_arr)
+            else:
+                embed = discord.Embed(
+                    title=f"❌ Reports Command",
+                    description=f"Error fetching report. Make sure you have added summoners to your server with /summoner add Name Tag",
+                    color=discord.Color.green(),
+                )
+
+                await interaction.followup.send(embed=embed)
 
 
 bot.run(os.getenv("DISCORD_TOKEN"))
