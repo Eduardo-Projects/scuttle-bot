@@ -374,6 +374,7 @@ async def process_stats_by_day_range(interaction: discord.Interaction, summoner_
             is_summoner_in_guild = any(summoner['puuid'] == puuid for summoner in summoners_in_guild)
 
             if not is_summoner_in_guild:
+                print(f"Summoner {summoner_riot_id} is not a part of {guild_name}")
                 embed = discord.Embed(
                     title=f"❌ Summoner {summoner_riot_id} is not part of your guild.",
                     description=f"",

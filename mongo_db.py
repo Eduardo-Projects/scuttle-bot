@@ -46,27 +46,21 @@ async def add_summoner(summoner_riot_id, guild_id):
 
 # Removes a summoner from a Guild
 async def remove_summoner(summoner_riot_id, guild_id):
-     # check if riot user exists before inserting into db
-    puuid = await lol_api.fetch_summoner_puuid_by_riot_id(summoner_riot_id)
-    if puuid:
-        collection = db.discord_servers
-        # Remove summoner riot id from the summoners array for the corresponding discord server
-        result = collection.update_one(
-            {"guild_id": guild_id},
-            {"$pull": {"summoners": {"puuid": puuid}}},
-        )
-        if result.acknowledged:
-            print(
-                f"Document for summoner '{summoner_riot_id}' was successfully removed from Guild with id {guild_id}"
-            )
-            return True
-        else:
-            print(
-                f"Failed to remove document from MongoDB for summoner '{summoner_riot_id}'."
-            )
-    print(
-        f"Failed to remove summoner {summoner_riot_id} from database. Make sure this summoner is in this Guild."
+    collection = db.discord_servers
+    # Remove summoner from the summoners array for the corresponding discord server
+    result = collection.update_one(
+        {"guild_id": guild_id},
+        {"$pull": {"summoners": {"name": summoner_riot_id}}},
     )
+    if result.acknowledged:
+        print(
+            f"Document for summoner '{summoner_riot_id}' was successfully removed from Guild with id {guild_id}"
+        )
+        return True
+    else:
+        print(
+            f"Failed to remove document from MongoDB for summoner '{summoner_riot_id}'."
+        )
     return False
 
 
