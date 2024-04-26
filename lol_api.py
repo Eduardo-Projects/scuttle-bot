@@ -98,9 +98,10 @@ async def get_summoner_region(summoner_puuid):
 # Checks to make sure provided riot id follows format: 'String1 #String2'
 # Keep in mind there can be any number of strings before the #
 def check_riot_id_format(riot_id):
-    pattern = r'^[\w]+(?:\s[\w]+)*\s#[\w]+$'
+    pattern = r'^[\w]+(?:\s[\w]+)*\s#[\w]+(?:\s[\w]+)*$'
 
     if re.match(pattern, riot_id):
         return True
     else:
+        print("Failed match.")
         return False
