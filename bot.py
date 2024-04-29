@@ -306,48 +306,51 @@ async def report_automatic():
             if channel_id:
                 channel = bot.get_channel(channel_id)
                 if channel:
-                    await channel.send(f"*Loading automated weekly report...*")
-                    stats = await mongo_db.fetch_report_by_day_range(guild.id, range=7)
-                    if stats:
-                        summoners_not_cached = []
-                        summoners = await mongo_db.get_summoners(guild.id)
-                        
-                        if summoners is not None:
-                            for summoner in summoners:
-                                is_cached = await mongo_db.is_summoner_cached(puuid=summoner["puuid"])
-                                if not is_cached:
-                                    summoners_not_cached.append(summoner["name"])
+                    try:
+                        await channel.send(f"*Loading automated weekly report...*")
+                        stats = await mongo_db.fetch_report_by_day_range(guild.id, range=7)
+                        if stats:
+                            summoners_not_cached = []
+                            summoners = await mongo_db.get_summoners(guild.id)
+                            
+                            if summoners is not None:
+                                for summoner in summoners:
+                                    is_cached = await mongo_db.is_summoner_cached(puuid=summoner["puuid"])
+                                    if not is_cached:
+                                        summoners_not_cached.append(summoner["name"])
 
-                            summoners_names = [summoner["name"] for summoner in summoners]
+                                summoners_names = [summoner["name"] for summoner in summoners]
+                                embed = discord.Embed(
+                                    title=f"📈 Server {guild.name}'s stats for the past 7 days.",
+                                    description=f"This is a general overview showing which summoner had the highest value for each stat in the past 7 days for Ranked Solo Queue.",
+                                    color=discord.Color.green(),
+                                )
+                                for stat in stats:
+                                    embed.add_field(name=f"{stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
+
+                                # Summoners
+                                summoners_embed = discord.Embed(
+                                    title=f"🏆 Summoners Compared:",
+                                    description=f"This is a list of all the summoners in your Guild whose stats have been compared.",
+                                    color=discord.Color.green(),
+                                )
+                                for name in summoners_names:
+                                    if name not in summoners_not_cached:
+                                        summoners_embed.add_field(name="", value=name, inline=True)
+
+                                embeds_arr=[embed, summoners_embed]
+
+                                await channel.send(embeds=embeds_arr)
+                        else:
                             embed = discord.Embed(
-                                title=f"📈 Server {guild.name}'s stats for the past 7 days.",
-                                description=f"This is a general overview showing which summoner had the highest value for each stat in the past 7 days for Ranked Solo Queue.",
+                                title=f"❌ Automatic Weekly Report",
+                                description=f"Error fetching automatic weekly report.",
                                 color=discord.Color.green(),
                             )
-                            for stat in stats:
-                                embed.add_field(name=f"{stat["Key"]}", value=f"{stat["Max Value"]} - {stat["Name"]}", inline=True)
 
-                            # Summoners
-                            summoners_embed = discord.Embed(
-                                title=f"🏆 Summoners Compared:",
-                                description=f"This is a list of all the summoners in your Guild whose stats have been compared.",
-                                color=discord.Color.green(),
-                            )
-                            for name in summoners_names:
-                                if name not in summoners_not_cached:
-                                    summoners_embed.add_field(name="", value=name, inline=True)
-
-                            embeds_arr=[embed, summoners_embed]
-
-                            await channel.send(embeds=embeds_arr)
-                    else:
-                        embed = discord.Embed(
-                            title=f"❌ Automatic Weekly Report",
-                            description=f"Error fetching automatic weekly report.",
-                            color=discord.Color.green(),
-                        )
-
-                        await channel.send(embed=embed)
+                            await channel.send(embed=embed)
+                    except:
+                        print("Can't send message to this channel.")
                 else:
                     print("Channel not found.")
             else:
@@ -372,7 +375,10 @@ async def broadcast_donation_automatic():
                 if channel:
                     embed = discord.Embed(title="🌟 Support Scuttle 🌟", 
                                           description=f"I hope you're enjoying using Scuttle to enhance your League of Legends experience!\n\nRunning and maintaining this bot takes a lot of time and resources. If you like what we do and want to help us keep the bot running smoothly, consider making a small donation. Every little bit helps us continue to develop and improve this service for you!\n\n🪴 [**Support Us Here!**](https://buymeacoffee.com/eduardoalba) \n\nThank you for your support, and happy gaming! 🎮", color=discord.Color.green())
-                    await channel.send(embed=embed)
+                    try:
+                        await channel.send(embed=embed)
+                    except:
+                        print("Can't send message to this channel.")
                 else:
                     print("Channel not found.")
             else:
