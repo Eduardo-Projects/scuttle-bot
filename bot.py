@@ -385,6 +385,48 @@ async def broadcast_donation_automatic():
                 print(f"{guild.name} does not have a main channel set.")
 
 
+@bot.tree.command(name="broadcast",description="This command is only for the bot admin.")
+async def broadcast(interaction: discord.Interaction):
+    # Ensure the command is being called from a discord server
+    if interaction.guild is None:
+        await interaction.response.send_message("This command must be used in a server.")
+        return
+
+    await interaction.response.defer()
+
+    if interaction.user.id != owner_id:
+        print(f"User {interaction.user} in guild {interaction.guild} tried to use Admin broadcast command.")
+        error_embed = discord.Embed(
+            title=f"❌ Broadcast Command",
+            description=f"This command is only for the bot admin.",
+            color=discord.Color.green(),
+        )
+        await interaction.followup.send(embed=error_embed)
+    else:
+        for guild in bot.guilds:
+            if guild.name != "Eduds" and guild.name != "Bonsai" and guild.name != "Voloron":
+                channel_id = await mongo_db.get_main_channel(guild.id)
+                print(f"\n[{guild.name}]  [Admin Donation Broadcast]")
+
+                if channel_id:
+                    channel = bot.get_channel(channel_id)
+                    if channel:
+                        embed = discord.Embed(title="🌟 Support Scuttle 🌟", 
+                                            description=f"I hope you're enjoying using Scuttle to enhance your League of Legends experience!\n\nRunning and maintaining this bot takes a lot of time and resources. If you like what we do and want to help us keep the bot running smoothly, consider making a small donation. Every little bit helps us continue to develop and improve this service for you!\n\n🪴 [**Support Us Here!**](https://buymeacoffee.com/eduardoalba) \n\nThank you for your support, and happy gaming! 🎮", color=discord.Color.green())
+                        try:
+                            await channel.send(embed=embed)
+                        except:
+                            print("Can't send message to this channel.")
+                    else:
+                        print("Channel not found.")
+                else:
+                    print(f"{guild.name} does not have a main channel set.")
+            else:
+                print("Skipping.")
+    
+    await interaction.followup.send("Done sending donation broadcast.")
+
+
 # HELPER FUNCTIONS
 
 
