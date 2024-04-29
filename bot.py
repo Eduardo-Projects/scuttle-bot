@@ -404,25 +404,22 @@ async def broadcast(interaction: discord.Interaction):
         await interaction.followup.send(embed=error_embed)
     else:
         for guild in bot.guilds:
-            if guild.name != "Eduds" and guild.name != "Bonsai" and guild.name != "Voloron":
-                channel_id = await mongo_db.get_main_channel(guild.id)
-                print(f"\n[{guild.name}]  [Admin Donation Broadcast]")
+            channel_id = await mongo_db.get_main_channel(guild.id)
+            print(f"\n[{guild.name}]  [Admin Donation Broadcast]")
 
-                if channel_id:
-                    channel = bot.get_channel(channel_id)
-                    if channel:
-                        embed = discord.Embed(title="🌟 Support Scuttle 🌟", 
-                                            description=f"I hope you're enjoying using Scuttle to enhance your League of Legends experience!\n\nRunning and maintaining this bot takes a lot of time and resources. If you like what we do and want to help us keep the bot running smoothly, consider making a small donation. Every little bit helps us continue to develop and improve this service for you!\n\n🪴 [**Support Us Here!**](https://buymeacoffee.com/eduardoalba) \n\nThank you for your support, and happy gaming! 🎮", color=discord.Color.green())
-                        try:
-                            await channel.send(embed=embed)
-                        except:
-                            print("Can't send message to this channel.")
-                    else:
-                        print("Channel not found.")
+            if channel_id:
+                channel = bot.get_channel(channel_id)
+                if channel:
+                    embed = discord.Embed(title="🌟 Support Scuttle 🌟", 
+                                        description=f"I hope you're enjoying using Scuttle to enhance your League of Legends experience!\n\nRunning and maintaining this bot takes a lot of time and resources. If you like what we do and want to help us keep the bot running smoothly, consider making a small donation. Every little bit helps us continue to develop and improve this service for you!\n\n🪴 [**Support Us Here!**](https://buymeacoffee.com/eduardoalba) \n\nThank you for your support, and happy gaming! 🎮", color=discord.Color.green())
+                    try:
+                        await channel.send(embed=embed)
+                    except:
+                        print("Can't send message to this channel.")
                 else:
-                    print(f"{guild.name} does not have a main channel set.")
+                    print("Channel not found.")
             else:
-                print("Skipping.")
+                print(f"{guild.name} does not have a main channel set.")
     
     await interaction.followup.send("Done sending donation broadcast.")
 
