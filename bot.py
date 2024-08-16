@@ -148,8 +148,12 @@ async def summoners(interaction: discord.Interaction):
             description=f"This is a list of all the summoners added to this guild.",
             color=discord.Color.green(),
         )
+
+        formatted_summoners = []
         for summoner in summoners:
-            embed.add_field(name="", value=f"🟢 {summoner["name"]}", inline=False)
+            formatted_summoners.append(f"🟢 {summoner["name"]}")
+        embed.add_field(name="", value='\n'.join(formatted_summoners), inline=False)
+        
         await interaction.followup.send(embed=embed)
     else:
         embed = discord.Embed(
@@ -538,9 +542,12 @@ async def process_report_by_day_range(interaction: discord.Interaction, range):
             description=f"This is a list of all the summoners in your Guild whose stats have been compared.",
             color=discord.Color.green(),
         )
+
+        formatted_summoners_names = []
         for name in summoners_names:
             if name not in summoners_not_cached:
-                summoners_embed.add_field(name="", value=name, inline=True)
+                formatted_summoners_names.append(f"🟢 {name}")
+        summoners_embed.add_field(name="Summoners", value='\n'.join(formatted_summoners_names), inline=False)
 
         embeds_arr=[embed, summoners_embed]
 
@@ -624,9 +631,12 @@ async def process_report_by_day_range_admin(interaction: discord.Interaction, gu
                     description=f"This is a list of all the summoners in your Guild whose stats have been compared.",
                     color=discord.Color.green(),
                 )
+
+                formatted_summoners_names = []
                 for name in summoners_names:
                     if name not in summoners_not_cached:
-                        summoners_embed.add_field(name="", value=name, inline=True)
+                        formatted_summoners_names.append(f"🟢 {name}")
+                summoners_embed.add_field(name="Summoners", value='\n'.join(formatted_summoners_names), inline=False)
 
                 embeds_arr=[embed, summoners_embed]
 
