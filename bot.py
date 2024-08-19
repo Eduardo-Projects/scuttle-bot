@@ -27,6 +27,8 @@ owner_id = int(owner_id)
 
 @bot.event
 async def on_ready():
+    print("\n")
+
     print(f"{bot.user.name} has connected to Discord!")
 
     report_automatic.start()
@@ -39,10 +41,9 @@ async def on_ready():
     print(f"Connected to {num_guilds} Guilds.")
     await mongo_db.update_guild_count(num_guilds)
 
-    guild_names = [guild.name for guild in bot.guilds]
-    print(f"Guilds Connected to: {guild_names}")
-
     await topgg_api.update_stats(bot)
+
+    print("\n")
 
     # guilds=bot.guilds
     # await mongo_db.update_summoner_region_all(guilds)
