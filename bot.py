@@ -3,6 +3,7 @@ from discord.ext import commands, tasks
 import mongo_db
 import lol_api
 import topgg_api
+import logger
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -58,6 +59,9 @@ async def on_guild_join(guild):
     print(f"Joined new guild: {guild.name} with Guild ID: {guild.id} ")
     await mongo_db.add_guild(guild.name, guild.id)
     await mongo_db.update_guild_count(len(bot.guilds))
+
+    # send message to support server
+    await logger.guild_join_channel(bot, guild)
 
 
 # Event listener for interactions
