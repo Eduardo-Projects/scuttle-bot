@@ -64,6 +64,14 @@ async def on_guild_join(guild):
     await logger.guild_join_channel(bot, guild)
 
 
+@bot.event
+async def on_guild_remove(guild):
+    print(f"Left guild: {guild.name} with Guild ID: {guild.id} ")
+
+    # send message to support server
+    await logger.guild_leave_channel(bot, guild)
+
+
 # Event listener for interactions
 @bot.event
 async def on_interaction(interaction):
