@@ -16,6 +16,9 @@ async def update_stats(bot):
         }
         response = requests.post(url, json=data, headers=headers)
 
-        print(f"Successfully updated top.gg stats. {response.json()}")
+        response.raise_for_status()
+
+        print(f"Successfully updated top.gg stats. Server count={len(bot.guilds)} and Shard count={bot.shard_count}")
+        print(f"Status Code: {response.status_code}")
     except Exception as e:
         print(f"An error occured updating top.gg stats: {e}")
