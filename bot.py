@@ -2,6 +2,7 @@ import discord
 from discord.ext import commands, tasks
 import mongo_db
 import lol_api
+import topgg_api
 import os
 from dotenv import load_dotenv
 from datetime import datetime
@@ -16,7 +17,7 @@ intents = discord.Intents.all()
 intents.messages = True
 intents.guilds = True
 
-bot = commands.Bot(command_prefix="/", intents=intents)
+bot = commands.AutoShardedBot(command_prefix="/", intents=intents)
 owner_id = os.getenv("OWNER_DISCORD_ID")
 owner_id = int(owner_id)
 
@@ -40,6 +41,8 @@ async def on_ready():
 
     guild_names = [guild.name for guild in bot.guilds]
     print(f"Guilds Connected to: {guild_names}")
+
+    await topgg_api.update_stats(bot)
 
     # guilds=bot.guilds
     # await mongo_db.update_summoner_region_all(guilds)
