@@ -22,6 +22,8 @@ bot = commands.AutoShardedBot(command_prefix="/", intents=intents)
 owner_id = os.getenv("OWNER_DISCORD_ID")
 owner_id = int(owner_id)
 
+environment = os.getenv("ENVIRONMENT")
+
 
 # EVENTS
 
@@ -40,9 +42,10 @@ async def on_ready():
 
     num_guilds = len(bot.guilds)
     print(f"Connected to {num_guilds} Guilds.")
-    await mongo_db.update_guild_count(num_guilds)
 
-    await topgg_api.update_stats(bot)
+    if environment == "prod":
+        await mongo_db.update_guild_count(num_guilds)
+        await topgg_api.update_stats(bot)
 
     print("\n")
 

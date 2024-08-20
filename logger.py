@@ -5,6 +5,7 @@ import pytz
 
 guild_join_channel_id=os.getenv("GUILD_JOIN_CHANNEL_ID")
 guild_leave_channel_id=os.getenv("GUILD_LEAVE_CHANNEL_ID")
+guild_error_channel_id=os.getenv("GUILD_ERROR_CHANNEL_ID")
 
 async def guild_join_channel(bot, guild):
     try:
@@ -30,6 +31,7 @@ async def guild_join_channel(bot, guild):
     except Exception as e:
         print(f"Failed to send guild join message to support server: {e}")
 
+
 async def guild_leave_channel(bot, guild):
     try:
         channel = bot.get_channel(int(guild_leave_channel_id))
@@ -53,3 +55,26 @@ async def guild_leave_channel(bot, guild):
             print(f"Failed to get the guild-leave channel.")
     except Exception as e:
         print(f"Failed to send guild join message to support server: {e}")
+
+
+async def log_error(bot, error_message, additional_info=None):
+    try:
+        channel = bot.get_channel(int(guild_error_channel_id))
+        if channel:
+            embed = discord.Embed(
+                title="⚠️ Error Logged",
+                color=discord.Color.red(),
+            )
+
+            # Adding the error message
+            embed.add_field(name="Error", value=error_message, inline=False)
+
+            # Adding any additional information if provided
+            if additional_info:
+                embed.add_field(name="Additional Info", value=additional_info, inline=False)
+
+            await channel.send(embed=embed)
+        else:
+            print(f"Failed to get the error log channel.")
+    except Exception as e:
+        print(f"Failed to log error to Discord: {e}")
