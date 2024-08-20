@@ -9,6 +9,7 @@ from dotenv import load_dotenv
 from datetime import datetime
 from discord.ext.commands import AutoShardedBot
 from discord import app_commands
+import functools
 
 # Load environment variables from .env file
 load_dotenv()
@@ -23,6 +24,19 @@ owner_id = os.getenv("OWNER_DISCORD_ID")
 owner_id = int(owner_id)
 
 environment = os.getenv("ENVIRONMENT")
+
+# Function Wrapper
+
+
+def command_error_handler(func):
+    @functools.wraps(func)
+    async def wrapper(*args, **kwargs):
+        try:
+            return await func(*args, **kwargs)
+        except Exception as e:
+            # Log the error using the previously defined log_error function
+            await logger.error(bot, e, additional_info=f"Error in command: {func.__name__}")
+    return wrapper
 
 
 # EVENTS
@@ -90,6 +104,7 @@ async def on_interaction(interaction):
 
 bot.remove_command('help')
 @bot.tree.command(name="help",description="Shows list of commands.")
+@command_error_handler
 async def help(interaction:discord.Interaction):
     embed = discord.Embed(title="🪴 Scuttle is brought to you by Eduardo Alba", description="I am a bot that provides quick and detailed **League of Legends** statistics.", color=discord.Color.green())
     commands = {
@@ -113,6 +128,7 @@ async def help(interaction:discord.Interaction):
 
 
 @bot.tree.command(name="enable", description="Sets the text channel where automatic messages will be sent, such as reports.")
+@command_error_handler
 async def enable(interaction: discord.Interaction):
     # Ensure the command is being called from a discord server
     if interaction.guild_id is None:
@@ -148,6 +164,7 @@ summoners_group = app_commands.Group(name="summoners", description="Commands rel
 
 
 @summoners_group.command(name="list", description="Displays a list of all summoners in your Guild.")
+@command_error_handler
 async def summoners(interaction: discord.Interaction):
     # Ensure the command is being called from a discord server
     if interaction.guild_id is None:
@@ -188,6 +205,7 @@ async def summoners(interaction: discord.Interaction):
     summoner_name="The name of the summoner",
     tag="Riot Tag"
 )
+@command_error_handler
 async def summoners_add(interaction: discord.Interaction, summoner_name: str, tag: str):
     # Ensure the command is being called from a discord server
     if interaction.guild_id is None:
@@ -222,6 +240,7 @@ async def summoners_add(interaction: discord.Interaction, summoner_name: str, ta
     summoner_name="The name of the summoner",
     tag="Riot Tag"
 )
+@command_error_handler
 async def summoners_remove(interaction: discord.Interaction, summoner_name: str, tag: str):
     # Ensure the command is being called from a discord server
     if interaction.guild_id is None:
@@ -265,6 +284,7 @@ bot.tree.add_command(stats_group)
     summoner_name="The name of the summoner",
     tag="Riot Tag"
 )
+@command_error_handler
 async def stats(interaction: discord.Interaction, summoner_name: str, tag:str):
     summoner_riot_id = f"{summoner_name} #{tag}"
     await process_stats_by_day_range(interaction, summoner_riot_id, range=1)
@@ -275,6 +295,7 @@ async def stats(interaction: discord.Interaction, summoner_name: str, tag:str):
     summoner_name="The name of the summoner",
     tag="Riot Tag"
 )
+@command_error_handler
 async def stats_weekly(interaction: discord.Interaction, summoner_name: str, tag:str):
     summoner_riot_id = f"{summoner_name} #{tag}"
     await process_stats_by_day_range(interaction, summoner_riot_id, range=7)
@@ -285,6 +306,7 @@ async def stats_weekly(interaction: discord.Interaction, summoner_name: str, tag
     summoner_name="The name of the summoner",
     tag="Riot Tag"
 )
+@command_error_handler
 async def stats_monthly(interaction: discord.Interaction, summoner_name: str, tag:str):
     summoner_riot_id = f"{summoner_name} #{tag}"
     await process_stats_by_day_range(interaction, summoner_riot_id, range=30)
@@ -298,11 +320,13 @@ bot.tree.add_command(reports_group)
 
 
 @reports_group.command(name="weekly", description="Display a weekly report comparing the stats of all summoners in your Guild.")
+@command_error_handler
 async def report(interaction: discord.Interaction):
     await process_report_by_day_range(interaction, range=7)
 
 
 @reports_group.command(name="monthly", description="Display a monthly report comparing the stats of all summoners in your Guild.")
+@command_error_handler
 async def report(interaction: discord.Interaction):
     await process_report_by_day_range(interaction, range=30)
 
@@ -310,6 +334,7 @@ async def report(interaction: discord.Interaction):
 @app_commands.describe(
     guild_id="The id of the guild.",
 )
+@command_error_handler
 async def report(interaction: discord.Interaction, guild_id: str):
     guild_id = int(guild_id)
     await process_report_by_day_range_admin(interaction, guild_id, range=30)
@@ -409,6 +434,7 @@ async def broadcast_donation_automatic():
 
 
 @bot.tree.command(name="broadcast",description="This command is only for the bot admin.")
+@command_error_handler
 async def broadcast(interaction: discord.Interaction):
     # Ensure the command is being called from a discord server
     if interaction.guild is None:

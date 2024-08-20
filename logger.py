@@ -57,8 +57,13 @@ async def guild_leave_channel(bot, guild):
         print(f"Failed to send guild join message to support server: {e}")
 
 
-async def log_error(bot, error_message, additional_info=None):
+async def error(bot, error_message, additional_info=None):
     try:
+        
+        print("\nError Logged:")
+        print(error_message)
+        print()
+        
         channel = bot.get_channel(int(guild_error_channel_id))
         if channel:
             embed = discord.Embed(
