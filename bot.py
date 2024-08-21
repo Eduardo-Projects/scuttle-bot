@@ -10,6 +10,7 @@ from datetime import datetime
 from discord.ext.commands import AutoShardedBot
 from discord import app_commands
 import functools
+import traceback
 
 # Load environment variables from .env file
 load_dotenv()
@@ -30,11 +31,13 @@ environment = os.getenv("ENVIRONMENT")
 
 def command_error_handler(func):
     @functools.wraps(func)
-    async def wrapper(*args, **kwargs):
+    async def wrapper(interaction: discord.Interaction, *args, **kwargs):
         try:
-            return await func(*args, **kwargs)
+            await logger.command(bot, interaction)
+            return await func(interaction, *args, **kwargs)
         except Exception as e:
-            await logger.error(bot, e, additional_info=f"Error in command: {func.__name__}")
+            stack_trace = traceback.format_exc()
+            await logger.error(bot, interaction, stack_trace, e)
     return wrapper
 
 
@@ -95,7 +98,6 @@ async def on_interaction(interaction):
         print(f"\n[{interaction.guild}]  [{interaction.user}]  [/{interaction.command.qualified_name}]")
         command_name = interaction.command.qualified_name.replace(" ", "_")
         await mongo_db.update_command_analytics(command=command_name)
-
 
 
 # BASIC COMMANDS

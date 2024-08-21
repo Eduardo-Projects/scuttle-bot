@@ -6,6 +6,7 @@ import pytz
 guild_join_channel_id=os.getenv("GUILD_JOIN_CHANNEL_ID")
 guild_leave_channel_id=os.getenv("GUILD_LEAVE_CHANNEL_ID")
 guild_error_channel_id=os.getenv("GUILD_ERROR_CHANNEL_ID")
+guild_logs_channel_id=os.getenv("GUILD_LOGS_CHANNEL_ID")
 
 async def guild_join_channel(bot, guild):
     try:
@@ -57,29 +58,56 @@ async def guild_leave_channel(bot, guild):
         print(f"Failed to send guild join message to support server: {e}")
 
 
-async def error(bot, error_message, additional_info=None):
+async def error(bot, interaction: discord.Interaction, error_stack, error_message ):
     try:
-        
-        print("\nError Logged:")
-        print(error_message)
-        print()
-        
-        channel = bot.get_channel(int(guild_error_channel_id))
-        if channel:
+        log_channel = bot.get_channel(int(guild_error_channel_id))
+        if log_channel:
             embed = discord.Embed(
-                title="⚠️ Error Logged",
+                title="⚠️Flagged Error!",
+                description="An error has been flagged while using a slash command.",
                 color=discord.Color.red(),
             )
 
-            # Adding the error message
-            embed.add_field(name="Error", value=error_message, inline=False)
+            # Get the current time in UTC
+            utc_now = datetime.now(pytz.utc)
 
-            # Adding any additional information if provided
-            if additional_info:
-                embed.add_field(name="Additional Info", value=additional_info, inline=False)
+            # Convert the UTC time to Eastern Time (EST/EDT)
+            est = pytz.timezone('US/Eastern')
+            est_now = utc_now.astimezone(est)
+            formatted_date = est_now.strftime('%Y-%m-%d %H:%M:%S %Z%z')
 
-            await channel.send(embed=embed)
+            embed.add_field(name="Error Command", value=f"`{interaction.command.qualified_name}`", inline=False)
+            embed.add_field(name="Error Stack", value=f"`{error_stack}`", inline=False)
+            embed.add_field(name="Error Message", value=f"`{error_message}`", inline=False)
+            embed.add_field(name="Error Timestamp", value=f"`{formatted_date}`", inline=False)
+            embed.add_field(name="Error Guild", value=f"`{interaction.guild}` ({interaction.guild_id})", inline=False)
+            embed.add_field(name="Error User", value=f"`{interaction.user}` ({interaction.user.id})", inline=False)
+            embed.add_field(name="Error Command Channel", value=f"`{interaction.channel}` ({interaction.channel_id})", inline=False)
+
+
+            await log_channel.send(embed=embed)
         else:
             print(f"Failed to get the error log channel.")
     except Exception as e:
         print(f"Failed to log error to Discord: {e}")
+
+async def command(bot, interaction: discord.Interaction):
+    try:
+        log_channel = bot.get_channel(int(guild_logs_channel_id))
+        if log_channel:
+            embed = discord.Embed(
+                title="🍀Command Used",
+                description="An interaction command has been used.",
+                color=discord.Color.green(),
+            )
+
+            embed.add_field(name="Command", value=f"`{interaction.command.qualified_name}`", inline=False)
+            embed.add_field(name="Guild of Use", value=f"`{interaction.guild}` ({interaction.guild_id})", inline=False)
+            embed.add_field(name="Channel of Use", value=f"`{interaction.channel}` ({interaction.channel_id})", inline=False)
+            embed.add_field(name="Command User", value=f"`{interaction.user}` ({interaction.user.id})", inline=False)
+
+            await log_channel.send(embed=embed)
+        else:
+            print(f"Failed to get the log channel.")
+    except Exception as e:
+        print(f"Failed to log command to Discord: {e}")
