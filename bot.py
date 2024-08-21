@@ -34,7 +34,6 @@ def command_error_handler(func):
         try:
             return await func(*args, **kwargs)
         except Exception as e:
-            # Log the error using the previously defined log_error function
             await logger.error(bot, e, additional_info=f"Error in command: {func.__name__}")
     return wrapper
 
