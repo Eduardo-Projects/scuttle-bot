@@ -15,7 +15,7 @@ import functools
 load_dotenv()
 
 # Define intents
-intents = discord.Intents.all()
+intents = discord.Intents.none()
 intents.messages = True
 intents.guilds = True
 
