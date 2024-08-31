@@ -455,13 +455,21 @@ async def broadcast(interaction: discord.Interaction):
     else:
         for guild in bot.guilds:
             channel_id = await mongo_db.get_main_channel(guild.id)
-            print(f"\n[{guild.name}]  [Admin Donation Broadcast]")
+            print(f"\n[{guild.name}]  [Admin Broadcast]")
 
             if channel_id:
                 channel = bot.get_channel(channel_id)
                 if channel:
-                    embed = discord.Embed(title="🌟 Support Scuttle 🌟", 
-                                        description=f"I hope you're enjoying using Scuttle to enhance your League of Legends experience!\n\nRunning and maintaining this bot takes a lot of time and resources. If you like what we do and want to help us keep the bot running smoothly, consider making a small donation. Every little bit helps us continue to develop and improve this service for you!\n\n🪴 [**Support Us Here!**](https://buymeacoffee.com/eduardoalba) \n\nThank you for your support, and happy gaming! 🎮", color=discord.Color.green())
+                    embed = discord.Embed(
+                        title="🌟 Join Scuttle's Discord Server 🌟",
+                        description=(
+                            "If you're enjoying Scuttle and want to stay updated, get help, or connect with other users, join our Discord support server! It's the best place to get assistance, share feedback, and stay in the loop with all things Scuttle.\n\n"
+                            "[**Join the Support Server Here!**](https://discord.gg/temu6Xt9Dv)\n\n"
+                            "We look forward to seeing you there! 🚀✨"
+                        ),
+                        color=discord.Color.green()
+                    )
+
                     try:
                         await channel.send(embed=embed)
                     except:
