@@ -6,6 +6,7 @@ from discord.ext import commands
 
 import utils.logger as logger
 from data.mongo import set_main_channel
+from config import SUPPORT_GUILD_LINK
 
 class Basic(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -20,6 +21,7 @@ class Basic(commands.Cog):
         )
         commands = {
             '✅ /enable': 'Sets the main channel to where the bot will send automated messages',
+            'ℹ️ /support': 'Provides the link to join the support server.',
             '📈 /stats daily {RIOT ID}': "Displays daily stats for Riot ID specified\nExample: `/stats Username NA1`",
             '📈 /stats weekly {RIOT ID}': "Displays weekly stats for Riot ID specified\nExample: `/stats weekly Username NA1`",
             '📈 /stats monthly {RIOT ID}': "Displays monthly stats for Riot ID specified\nExample: `/stats monthly Username NA1`",
@@ -69,6 +71,26 @@ class Basic(commands.Cog):
             )
             await interaction.followup.send(embed=embed)
             await logger.command(self.bot, interaction, output_embed=embed)
+
+    @app_commands.command(name="support", description="Provides the link to join the support server.")
+    async def support(self, interaction: discord.Interaction):
+        embed = discord.Embed(
+            title="🛠️ Need Help? Join Our Support Server! 🎉",
+            description=(
+                "If you need assistance, have questions, or just want to connect with other users, "
+                f"you're welcome to join our **[Support Server]({SUPPORT_GUILD_LINK})**! 🛡️\n\n"
+                "Our team and community members are here to help you with anything related to the bot. "
+                "Don't hesitate to drop by and say hi! 😊"
+            ),
+            color=discord.Color.blurple()  # A friendly and vibrant color
+        )
+
+        embed.set_footer(
+            text="We're here to help! 🧡 | See you there!",
+        )
+
+        await interaction.response.send_message(embed=embed)
+        await logger.command(self.bot, interaction, output_embed=embed)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(Basic(bot))

@@ -88,6 +88,7 @@ async def error(bot, interaction: discord.Interaction, error_stack, error_messag
     except Exception as e:
         print(f"Failed to log error to Discord: {e}")
 
+
 async def command(bot, interaction: discord.Interaction, output_embed: discord.Embed = None, output_embeds: List[discord.Embed] = None):
     try:
         log_channel = bot.get_channel(int(GUILD_LOGS_CHANNEL_ID))
