@@ -66,10 +66,10 @@ class Reports(commands.Cog):
                     await logger.command(self.bot, interaction, output_embed=error_embed)
                     return
 
-                guild_name = guild["name"]
+                guild_name = guild.get("name", "None")
             else:
                 # Use the guild of the interaction for non-admin commands
-                guild_name = interaction.guild
+                guild_name = interaction.guild or "None"
                 guild_id = interaction.guild_id
 
             # Fetch the report stats

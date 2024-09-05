@@ -143,7 +143,8 @@ async def fetch_summoner_stats_by_day_range(summoner_puuid, range=7):
 # The report will display which summoner has the highest value for each stat
 async def fetch_report_by_day_range(guild_id, range=7):
     guild_data = db.discord_servers.find_one({"guild_id": guild_id})
-    print(f"Fetching {range} day report for Guild: {guild_data["name"]}...")
+    guild_name = guild_data.get("name", "None")
+    print(f"Fetching {range} day report for Guild: {guild_name}...")
     if guild_data:
         agg_stats = []
         summoners = await get_summoners(guild_id)
@@ -184,7 +185,7 @@ async def fetch_report_by_day_range(guild_id, range=7):
             ]
 
             print(
-                f"Finished fetching weekly report for Guild: {guild_data["name"]}. Compared stats of {len(summoners)} summoners."
+                f"Finished fetching weekly report for Guild: {guild_name}. Compared stats of {len(summoners)} summoners."
             )
             return result
         else:
